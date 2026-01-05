@@ -1,0 +1,178 @@
+# ============================================================================
+# .gitignore para Epicrisis App
+# ============================================================================
+
+# ============================================================================
+# DEPENDENCIAS
+# ============================================================================
+epicrisis-app/backend/node_modules/
+epicrisis-app/.pnpm-store/
+epicrisis-app/.yarn/
+epicrisis-app/bower_components/
+
+# ============================================================================
+# BUILD / COMPILACIÓN
+# ============================================================================
+epicrisis-app/backend/dist/
+epicrisis-app/backend/dist/build/
+epicrisis-app/out/
+epicrisis-app/.angular/
+epicrisis-app/.next/
+epicrisis-app/.nuxt/
+
+# Backend
+epicrisis-app/backend/dist/
+epicrisis-app/backend/build/
+
+# Frontend
+epicrisis-app/frontend/dist/
+epicrisis-app/frontend/.angular/
+epicrisis-app/frontend/coverage/
+
+# ============================================================================
+# LOGS
+# ============================================================================
+epicrisis-app/logs/
+epicrisis-app/*.log
+epicrisis-app/npm-debug.log*
+epicrisis-app/yarn-debug.log*
+epicrisis-app/yarn-error.log*
+epicrisis-app/pnpm-debug.log*
+epicrisis-app/lerna-debug.log*
+
+# ============================================================================
+# ENTORNO / CONFIGURACIÓN LOCAL
+# ============================================================================
+epicrisis-app/.env
+epicrisis-app/env
+epicrisis-app/.env.local
+epicrisis-app/.env.development.local
+epicrisis-app/.env.test.local
+epicrisis-app/.env.production.local
+epicrisis-app/backend/.env
+epicrisis-app/frontend/.env
+
+# ============================================================================
+# IDE / EDITORES
+# ============================================================================
+epicrisis-app/.vscode/
+epicrisis-app/.idea/
+epicrisis-app/*.swp
+epicrisis-app/*.swo
+epicrisis-app/*~
+epicrisis-app/.project
+epicrisis-app/.classpath
+epicrisis-app/.settings/
+epicrisis-app/*.sublime-workspace
+epicrisis-app/*.sublime-project
+
+# ============================================================================
+# SISTEMA OPERATIVO
+# ============================================================================
+epicrisis-app/.DS_Store
+epicrisis-app/.DS_Store?
+epicrisis-app/._*
+epicrisis-app/.Spotlight-V100
+epicrisis-app/.Trashes
+epicrisis-app/ehthumbs.db
+epicrisis-app/Thumbs.db
+epicrisis-app/desktop.ini
+
+# ============================================================================
+# TESTING
+# ============================================================================
+epicrisis-app/coverage/
+epicrisis-app/.nyc_output/
+epicrisis-app/*.lcov
+epicrisis-app/.coverage
+epicrisis-app/htmlcov/
+epicrisis-app/test-results/
+epicrisis-app/playwright-report/
+epicrisis-app/test-report.html
+
+# ============================================================================
+# MODELOS LLM / ML
+# ============================================================================
+epicrisis-app/models/llm/tinyllama-1.1b-chat-q4/
+epicrisis-app/models/embeddings/multilingual-e5-small/
+epicrisis-app/models/llm/*.bin
+epicrisis-app/models/llm/*.gguf
+epicrisis-app/models/llm/*.ggml
+epicrisis-app/models/embeddings/*.bin
+epicrisis-app/models/embeddings/*.onnx
+epicrisis-app/*.model
+epicrisis-app/*.pt
+epicrisis-app/*.pth
+epicrisis-app/*.safetensors
+
+# Mantener estructura de directorios
+epicrisis-app/!models/llm/.gitkeep
+epicrisis-app/!models/embeddings/.gitkeep
+
+# ============================================================================
+# CACHE
+# ============================================================================
+epicrisis-app/.cache/
+epicrisis-app/.parcel-cache/
+epicrisis-app/.eslintcache
+epicrisis-app/.stylelintcache
+epicrisis-app/*.tsbuildinfo
+epicrisis-app/.npm/
+
+# ============================================================================
+# TEMPORAL
+# ============================================================================
+epicrisis-app/tmp/
+epicrisis-app/temp/
+epicrisis-app/*.tmp
+epicrisis-app/*.temp
+epicrisis-app/*.bak
+epicrisis-app/*.backup
+
+# ============================================================================
+# ORACLE / BASE DE DATOS
+# ============================================================================
+epicrisis-app/*.dmp
+epicrisis-app/*.sql.bak
+epicrisis-app/tnsnames.ora
+epicrisis-app/sqlnet.ora
+epicrisis-app/wallet/
+epicrisis-app/cwallet.sso
+epicrisis-app/ewallet.p12
+
+# ============================================================================
+# DOCUMENTOS GENERADOS
+# ============================================================================
+epicrisis-app/*.pdf
+epicrisis-app/*.docx
+epicrisis-app/!docs/*.pdf
+epicrisis-app/!docs/*.docx
+
+# ============================================================================
+# SECRETOS / CREDENCIALES
+# ============================================================================
+epicrisis-app/*.pem
+epicrisis-app/*.key
+epicrisis-app/*.crt
+epicrisis-app/*.p12
+epicrisis-app/*.pfx
+epicrisis-app/secrets/
+epicrisis-app/credentials/
+epicrisis-app/.secrets
+
+# ============================================================================
+# DOCKER
+# ============================================================================
+epicrisis-app/.docker/
+epicrisis-app/docker-compose.override.yml
+
+# ============================================================================
+# OTROS
+# ============================================================================
+epicrisis-app/*.gz
+epicrisis-app/*.zip
+epicrisis-app/*.tar
+epicrisis-app/*.rar
+epicrisis-app/.terraform/
+epicrisis-app/*.tfstate
+epicrisis-app/epicrisis-app/*.tfstate.*

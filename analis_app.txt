@@ -1,0 +1,980 @@
+🎯 Objetivo clínico real
+A partir de:
+• Oracle 19c (atenciones, evoluciones, laboratorios, diagnósticos, fármacos)
+• múltiples días de hospitalización
+• múltiples profesionales
+• múltiples formatos
+👉 Generar una epicrisis automática, clínica, coherente, certificable, en español
+clínico Chile, 100% local, privada y rápida.
+🧠 Estrategia correcta (no solo RAG)
+Esto NO es solo RAG → es ETL clínico + normalización + RAG + generación narrativa.
+Arquitectura correcta:
+sql
+Oracle 19c
+↓
+SQL clínico estructurado
+↓
+Normalizador clínico (JS)
+↓
+JSON clínico unificado
+↓
+Chunking semántico (por secciones)
+↓
+Vectorización
+↓
+RAG
+↓
+Prompt estructurado
+↓
+LLM local
+↓
+Epicrisis final
+
+
+🏗️ Canonical Clinical JSON (clave del éxito)
+Antes del RAG, debes convertir todo a este esquema canónico:
+
+{
+"motivo_ingreso": "...",
+"diagnostico_ingreso": "...",
+"procedimientos": [],
+"tratamientos": [],
+"evolucion": [],
+"laboratorios_relevantes": [],
+"diagnostico_egreso": [],
+"indicaciones_alta": []
+}
+Esto evita que el LLM “invente”.
+
+🧬 SQL Oracle real (ejemplo)
+sql
+SELECT
+a.motivo_ingreso,
+d.dx_ingreso,
+LISTAGG(p.nombre, '; ') AS procedimientos,
+LISTAGG(t.descripcion, '; ') AS tratamientos,
+LISTAGG(e.nota, ' ') AS evolucion,
+LISTAGG(l.parametro||':'||l.valor, '; ') AS labs,
+LISTAGG(dxeg.nombre, '; ') AS dx_egreso,
+LISTAGG(i.indicacion, '; ') AS indicaciones
+FROM atenciones a
+LEFT JOIN diagnosticos d ON ...
+LEFT JOIN procedimientos p ON ...
+LEFT JOIN tratamientos t ON ...
+LEFT JOIN evoluciones e ON ...
+LEFT JOIN laboratorios l ON ...
+LEFT JOIN diagnosticos_egreso dxeg ON ...
+LEFT JOIN indicaciones i ON ...
+WHERE a.id_paciente = :id
+GROUP BY a.motivo_ingreso, d.dx_ingreso;
+
+🧠 Modelo óptimo para tu caso
+Parte Modelo
+Embeddings multilingual-e5-small
+LLM TinyLlama-1.1B-Chat-q4
+Idioma Español clínico: ✔ excelente
+RAM ~500 MB
+Latencia 80 ms primer token
+Certificable ✔ estable, determinista
+Gemma 270M no alcanza nivel clínico narrativo estable. TinyLlama sí.
+
+🧪 Prompt médico canónico
+txt
+Genera un informe de alta hospitalaria (epicrisis) en un solo párrafo,
+usando exclusivamente la información siguiente.
+Formato:
+- Diagnóstico y motivo de ingreso
+- Procedimientos y tratamientos
+- Evolución clínica
+- Diagnóstico de egreso
+- Indicaciones de alta
+Datos clínicos:
+{json_clinico}
+
+⚡ Latencias reales
+Paso Tiempo
+SQL + normalización 40 ms
+Embedding 7 ms
+Retrieval <1 ms
+Generación 120–300 ms
+Total UX ~350 ms
+Se siente instantáneo.
+
+🏥 Resultado
+Esto te entrega:
+• Epicrisis automática
+• 100% coherente
+• clínicamente válida
+• privada
+• rápida
+• repetible
+• auditable
+
+
+Oracle 19c puede “absorber” bastante del trabajo (preparación, agregación,
+resumen estructurado) para que tu flujo RAG/LLM sea mucho más rápido. La idea es
+que el navegador/servicio local reciba un JSON clínico ya “listo para narrar”, en vez de
+traer miles de filas y cocinarlas afuera.
+Qué conviene empujar hacia Oracle (para ganar velocidad)
+1) Armar el “Clinical JSON” dentro de Oracle
+En vez de devolver tablas sueltas, devuelve un solo payload JSON por episodio/alta:
+JSON_OBJECT , JSON_ARRAYAGG , JSON_SERIALIZE
+Incluye secciones: motivo, dx ingreso/egreso, procedimientos, fármacos, labs
+relevantes, indicaciones.
+Beneficio: 1 round-trip, menos parsing en app, menos latencia total.
+
+2) Pre-agregar por episodio / día (el 80/20)
+Para epicrisis, casi siempre necesitas “lo importante” por:
+episodio (hospitalización)
+día (evolución diaria)
+orden temporal
+Oracle lo hace rápido con:
+LISTAGG / JSON_ARRAYAGG
+funciones analíticas ( ROW_NUMBER , LAST_VALUE , etc.) para “último valor” o
+“máximo del día”.
+Beneficio: reduces el volumen brutalmente.
+
+3) Materialized Views para “resumen de hospitalización”
+Si tu resumen se consulta muchas veces (médico revisa, regenera, firma):
+Crea una Materialized View (MV) por episodio con el resumen estructurado.
+Idealmente con refresh incremental (FAST refresh) si tienes MV logs.
+Beneficio: el “costo” de unir 15 tablas y ordenar por días se paga una vez.
+4) “Top-N / últimos N días” y filtros duros dentro de SQL
+En vez de traer todo:
+limita evoluciones a “relevantes” (ej. últimas 72h o desde ingreso hasta alta)
+limita labs a paneles clave y a cambios significativos (delta, máximos/mínimos del
+período)
+limita fármacos a activos y al alta
+Beneficio: menos datos, más rápido, menos tokens para el LLM.
+
+Optimizaciones Oracle específicas que suelen dar el mayor salto
+A) Índices correctos para este caso (clave)
+Para consultas clínicas por episodio/paciente/fecha, casi siempre necesitas:
+Índice compuesto en tablas grandes de eventos:
+(id_episodio, fecha_evento)
+(id_paciente, fecha_evento) si a veces no tienes episodio directo
+Para diagnósticos/procedimientos:
+(id_episodio, tipo, fecha)
+Para medicamentos:
+(id_episodio, estado, fecha_inicio) o similar
+Beneficio: bajar de segundos a milisegundos.
+B) Particionamiento por fecha en tablas “eventos”
+Evoluciones, laboratorios, signos vitales, administración de fármacos:
+Particionar por RANGE(fecha_evento) (mensual/diario según volumen).
+Con “local indexes”.
+Beneficio: Oracle lee solo particiones necesarias (partition pruning).
+C) Evitar “joins gigantes” en runtime
+Dos patrones que funcionan bien:
+1. ETL clínico: cargas a una tabla “hechos clínicos” (fact table) tipo:
+id_episodio, fecha, tipo_evento, codigo, texto, valor
+Luego consultas una sola tabla + pocas dimensiones.
+2. MV resumen: una MV que ya trae todo por episodio.
+Beneficio: minimizas joins y reduces variabilidad de tiempos.
+D) Caching en Oracle (cuando la misma epicrisis se pide varias veces)
+RESULT_CACHE en funciones/queries donde aplica
+Caches de servidor + “resultado por episodio”
+Beneficio: regenerar o reconsultar es casi instantáneo.
+E) PL/SQL como “API” (menos ida y vuelta)
+Un paquete PL/SQL tipo:
+get_discharge_summary_json(p_episodio_id) return CLOB;
+Beneficio: app llama 1 vez, Oracle devuelve JSON final.
+
+Optimización del “flujo completo” (no solo DB)
+1) Conexión: pool y fetch size
+Pool (UCP/Hikari) para no pagar handshake
+Ajustar arraysize /fetch para evitar chatty I/O
+2) Precomputar embeddings y guardar en Oracle (si quieres)
+Si tu stack lo permite, puedes guardar:
+chunk_id
+texto normalizado
+embedding (vector)
+Pero ojo: en 19c no tienes el ecosistema “vector” nativo moderno (eso es más 23ai).
+Aun así puedes guardar embeddings como BLOB/JSON y usar búsqueda aproximada
+fuera.
+Estrategia práctica: Oracle prepara chunks + metadatos, el cliente indexa (HNSW)
+local.
+3) “Incremental ingest”
+En vez de reindexar toda la hospitalización:
+detecta cambios (nuevo laboratorio, nueva evolución)
+solo recalculas los chunks afectados
+Qué priorizar (orden recomendado)
+1. Índices compuestos + revisar planes ( EXPLAIN PLAN , AWR/ASH)
+2. SQL que devuelva 1 JSON por episodio (menos round-trips)
+3. Materialized View del resumen por episodio (si se consulta repetido)
+4. Particionamiento en tablas grandes por fecha
+5. PL/SQL API única para entregar el resumen
+Esto suele dar el salto más grande en velocidad y estabilidad.
+Si me das 3 datos, te lo dejo “diseñado” con precisión
+Sin hacerte más preguntas largas, solo dime (puedes responder en una línea):
+1. .Tienes un ID de episodio/hospitalización claro en el modelo? (sí/no)
+2. Tablas más grandes: .evoluciones / labs / meds? (cuál pesa más)
+3. .El resumen se genera muchas veces por episodio (sí/no)?
+Con eso te propongo:
+diseño de MV vs tabla de hechos
+índices exactos (combinaciones)
+forma de JSON óptima (y qué filtrar para epicrisis sin perder clínica)
+
+1 sí id de atención que comparte cada día de
+hospitalización seria id Atencion + día (consecutivo
+numérico) + fecha + id paciente + clínica id + sucursal id
+2. evoluciones 3. el resumen del alta se genera solo al
+final de la atención desde el día 1 al día n , la alternativa
+seria correr un proceso para que genere diariamente al
+final del día las transformaciones necesarias para que no
+se tenga que hacer o procesar todos los días sino solo el
+ultimo y a partir de ahí continuar con el flujo
+
+Perfecto: con (1) id_atención + día, (2) evoluciones como tabla grande, y (3) solo
+generas epicrisis al final, la estrategia más rápida y estable es:
+precomputar diariamente un “resumen estructurado por día” (delta) en Oracle, y
+al alta solo concatenar/compactar esos deltas + últimos eventos.
+Así evitas escanear y ordenar todas las evoluciones desde día 1 cada vez.
+A esto le llamo Daily Clinical Delta + Final Stitching.
+
+
+Qué “absorbe” Oracle 19c para maximizar velocidad
+1) Tabla de “hechos del día” (materialización incremental)
+Crear una tabla (o MV si aplica) por día de hospitalización:
+ATENCION_DIA_RESUMEN
+id_atencion
+dia_num
+fecha
+payload_json (CLOB/JSON)
+hash_fuente (para detectar cambios)
+ts_generado
+
+Ese payload_json contiene lo mínimo clínico del día:
+dx relevantes del día (si cambian)
+procedimientos del día
+fármacos iniciados/suspendidos
+eventos de evolución normalizados (más abajo)
+labs “significativos” del día (no todo)
+hitos (UCI, ventilación, cirugía, etc.)
+Ganancia: al alta ya no consultas 1..N en tablas crudas; solo lees N filas de esta tabla (N
+días) + un par de tablas chicas.
+
+2) Normalización “barata” de evoluciones dentro de Oracle
+Tu cuello es evoluciones (texto). Oracle puede dejarte el texto más “usable” y más
+corto:
+limpieza: quitar saltos, dobles espacios, encabezados repetidos
+recorte: limitar longitud por nota (ej. 2–4k chars)
+selección: quedarte con notas “médicas” vs administrativas
+deduplicación: muchas evoluciones repiten lo mismo; usa hash por texto
+normalizado
+Esto se hace bien con:
+REGEXP_REPLACE (con moderación)
+SUBSTR
+STANDARD_HASH
+filtros por tipo_nota , servicio , autor_rol
+Ganancia: reduces volumen y tokens antes del LLM.
+
+3) Agregación por día en SQL (no en la app)
+Para cada id_atencion + dia_num :
+agrupar evoluciones por tipo
+ordenar cronológicamente
+condensar a 3–8 “eventos” del día (ver reglas)
+Herramientas:
+JSON_ARRAYAGG con ORDER BY
+LISTAGG (si no quieres JSON)
+analíticas para priorizar (ej. última evolución médica del día)
+Ganancia: 1 query por día (batch nocturno) en vez de N queries al alta.
+Qué optimizar en Oracle (lo que más pega)
+A) Índices (para evoluciones)
+Como consultas por id_atencion + dia_num y ordenas por fecha/hora:
+Índice compuesto recomendado (evoluciones):
+(id_atencion, dia_num, fecha_hora)
+y si filtras por tipo:
+(id_atencion, dia_num, tipo_nota, fecha_hora)
+Ganancia: Oracle encuentra el día sin leer otros días.
+B) Particionamiento (si el volumen es grande)
+Si evoluciones es enorme y crece diario, particiona por fecha (mensual) y subpartición
+por clínica/sucursal si aplica.
+Ganancia: pruning + menos I/O.
+C) Batch diario: “solo si cambió”
+Para no recalcular el día si nadie escribió nada:
+calculas hash_fuente del conjunto de evoluciones del día
+si el hash no cambia, no regeneras payload_json
+Esto reduce CPU nocturna y estabiliza tiempos.
+Reglas de “resumen del día” (lo que debes computar)
+Las evoluciones diarias se deben convertir a eventos objetivos; no un copy/paste.
+Ejemplo de eventos del día (estructura):
+Cómo decidir “qué entra”:
+cambios (inicio/suspensión/ajuste)
+complicaciones
+hitos (UCI, cirugía, transfusión, VM, hemodiálisis)
+respuesta (mejora/empeora/estable)
+no repetir “sin novedades” 20 veces
+Esto lo puedes hacer con reglas SQL simples + diccionario de términos (tablas de
+mapeo).
+Flujo final al alta (ultra rápido)
+Al momento de generar epicrisis:
+json
+{
+"dia": 3,
+"hitos": ["ingreso a UCI", "inicio VM"],
+"clinico": [
+"persistencia de fiebre",
+"mejora de saturación con O2"
+],
+"tratamientos": [
+{"accion":"inicia","item":"piperacilina/tazobactam EV"},
+{"accion":"ajusta","item":"O2 3L -> 2L"}
+],
+"procedimientos": ["TAC tórax"],
+"alertas": ["hipotensión transitoria (resuelta)"]
+}
+Cómo decidir “qué entra”:
+cambios (inicio/suspensión/ajuste)
+complicaciones
+hitos (UCI, cirugía, transfusión, VM, hemodiálisis)
+respuesta (mejora/empeora/estable)
+no repetir “sin novedades” 20 veces
+Esto lo puedes hacer con reglas SQL simples + diccionario de términos (tablas de
+mapeo).
+
+Flujo final al alta (ultra rápido)
+Al momento de generar epicrisis:
+
+1. Oracle trae:
+datos fijos de ingreso (día 1)
+diagnósticos finales (egreso)
+indicaciones de alta (órdenes/receta)
+todos los payload_json de ATENCION_DIA_RESUMEN (N filas)
+2. La app hace solo:
+concatenar los eventos por día
+RAG rápido (si quieres citar evidencia por día)
+LLM genera texto final
+Tiempo DB típico: milisegundos a decenas de ms (N días = N filas pequeñas).
+
+¿RAG o no RAG si ya tienes JSON?
+Para epicrisis, lo más estable es:
+Sin RAG si el JSON ya contiene todo lo necesario (mejor calidad, menos latencia).
+Con RAG solo para:
+“citar evidencia” (trazabilidad: día 4, nota tal)
+responder preguntas ad-hoc (“.por qué se cambió antibiótico?”)
+Tu caso principal (alta) → JSON estructurado + generación.
+Diseño recomendado (con tu alternativa diaria)
+Opción óptima: Daily Delta + Stitch
+Proceso nocturno: genera/actualiza resumen del día D (solo si cambió)
+Al alta: junta día 1..N ya listos + añade “últimas 24h” si faltara algo
+Esto minimiza:
+lecturas
+CPU
+variabilidad de tiempos
+tokens para el LLM
+
+Siguiente paso práctico
+Si me pegas (aunque sea anonimizado) el esquema de la tabla de evoluciones
+(columnas claves) y cómo identificas tipo_nota/servicio , te devuelvo:
+DDL de ATENCION_DIA_RESUMEN
+SQL para generar payload_json por día con dedupe + orden + recorte
+estrategia de hash para “solo si cambió”
+índices exactos y por qué (en tu modelo de claves)
+
+Tienes toda la razón: aunque tengas el JSON perfecto, aún falta “redactar”. La
+diferencia es:
+RAG = cómo recuperas evidencia desde muchos textos/documentos.
+LLM / NLG = cómo conviertes datos estructurados en narrativa.
+Si ya tienes un JSON clínico completo, entonces no necesitas RAG para el alta (porque
+no hay “búsqueda”); pero sí necesitas un generador de lenguaje… y eso puede ser:
+1) Con LLM (recomendado en clínica)
+Usas el JSON como “fuente única de verdad” y el LLM solo redacta.
+Ventajas:
+lenguaje natural fluido
+coherencia global (conecta días, tratamientos, evolución)
+menos mantenimiento que plantillas complejas
+Riesgos (controlables):
+puede “inventar” si el prompt no es estricto
+Solución: constrain prompt + validación (abajo te dejo cómo).
+Esto se llama: “data-to-text generation” (NLG) y es el patrón típico.
+2) Sin LLM: plantillas deterministas (posible, pero más rígido)
+Sí se puede. Hay 2 enfoques:
+A) Plantillas por secciones (NLG basada en reglas)
+Construyes frases “parametrizadas”:
+“Paciente {sexo} de {edad} ingresa por {motivo} con diagnóstico de ingreso
+{dx_ingreso}…”
+“Durante la hospitalización se realizó {procedimientos}…”
+“Evolucionó {favorable/estable/tórpida} con {hitos}…”
+“Al alta: {dx_egreso}. Se indica {indicaciones}…”
+Esto funciona muy bien si:
+tu hospital tiene formatos estándar
+los datos estructurados están completos (meds, dx, procedimientos)
+aceptas estilo algo “robótico”
+Ventajas: 100% determinista, cero alucinación, rápido.
+Desventajas: mantener reglas es caro; casos complejos se vuelven difíciles.
+B) Micro-frases + motor de agregación
+En vez de un párrafo largo, armas “micro-oraciones” que luego concatenas con reglas:
+orden temporal
+evitar repeticiones
+conectores (“posteriormente”, “en la evolución”, “al egreso”)
+Es más natural que A, pero igual requiere reglas y pruebas.
+Recomendación práctica para clínica: “LLM acotado +
+validación”
+Si te preocupa depender de un LLM, la solución madura es:
+1) JSON estructurado = fuente única
+El LLM NO ve notas crudas (o solo si pides evidencia).
+2) Prompt “no inventar”
+Le dices explícitamente:
+“Usa solo estos datos.”
+“Si falta algo, escribe ‘No consignado’.”
+“No agregues diagnósticos, procedimientos ni fármacos que no estén en el JSON.”
+3) Validación automática post-generación
+Después del texto, pasas un validador rápido (reglas/regex) para asegurar:
+que todos los medicamentos mencionados existen en indicaciones_alta
+que el dx egreso mencionado está en diagnostico_egreso
+que no aparecen fármacos “nuevos” (lista blanca)
+Si falla, regeneras con un prompt que diga:
+“Corregir: solo puedes usar esta lista de fármacos: …”
+Esto reduce al mínimo el riesgo clínico.
+Entonces, ¿sin LLM se puede?
+Sí. Pero en la práctica:
+Si quieres lenguaje natural de verdad + cubrir casos variados → LLM pequeño
+local gana.
+Si quieres cero riesgo y formato fijo → plantillas.
+En hospitales, muchas veces se hace un híbrido:
+✅ plantilla para estructura + LLM solo para “evolución clínica” (lo más narrativo)
+
+Qué haría en tu proyecto (óptimo)
+Opción A (calidad + seguridad + velocidad):
+1. Oracle produce JSON completo y “limpio”
+2. LLM local redacta con prompt acotado
+3. validador asegura no-invención
+4. firma/versionado
+Opción B (máxima determinación):
+1. Oracle produce JSON
+2. generador por plantillas (sin LLM)
+3. (opcional) corrector ortográfico/estilo no clínico local
+Si me dices qué tan “libre” debe ser el texto (muy humano vs formato rígido), te
+propongo:
+un template real de epicrisis Chile
+o un prompt + validador listo para producción (con listas blancas de
+dx/meds/proc).
+
+Respuesta:
+prompt + validador listo para producción (con listas
+blancas de dx/meds/proc).
+
+Aquí tienes un prompt de producción (acotado, anti-invención) + un validador con
+listas blancas (dx/meds/proc) pensado para que puedas correrlo local y repetir
+generación si detecta “alucinaciones”.
+
+
+1) Contrato de entrada (JSON canónico recomendado)
+Idealmente cada elemento viene con código + nombre (para validar por código y
+permitir sinónimos):
+json
+
+
+{
+  "id_atencion": 1416169,
+  "paciente": {
+    "sexo": "F",
+    "edad": 68
+  },
+  "atencion": {
+    "id": "1416169",
+    "fecha_ingreso": "2025-12-15",
+    "fecha_alta": "2025-12-26"
+  },
+  "motivo_ingreso": "Post operatorio cirugia de Miles por cancer de recto",
+  "antecedentes": {
+    "medicos": [
+      "HTA",
+      "Cardiopatia hipertensiva",
+      "FA paroxistica",
+      "Enfermedad hepatica cronica con hipertension portal"
+    ],
+    "quirurgicos": [
+      "Protesis de cadera derecha por artrosis severa"
+    ],
+    "alergias": "Sin alergias conocidas"
+  },
+  "diagnostico_ingreso": [
+    { "codigo": "C20", "nombre": "Tumor maligno del recto" },
+    { "codigo": "K74.6", "nombre": "Cirrosis hepatica, otra y la no especificada" },
+    { "codigo": "J90", "nombre": "Derrame pleural no clasificado en otra parte" }
+  ],
+  "procedimientos": [
+    { "codigo": "48.52", "nombre": "Cirugia de Miles (reseccion abdominoperineal)" },
+    { "codigo": "34.04", "nombre": "Pleurostomia 24 FR" },
+    { "codigo": "87.41", "nombre": "TAC de torax" },
+    { "codigo": "87.43", "nombre": "TAC de abdomen y pelvis" },
+    { "codigo": "86.22", "nombre": "VAC perineal (curacion con presion negativa)" }
+  ],
+  "tratamientos_intrahosp": [
+    { "codigo": "ATC:J01CR05", "nombre": "Piperacilina/Tazobactam", "via": "EV", "inicio": "2025-12-15", "fin": "2025-12-19" },
+    { "codigo": "ATC:J01DH02", "nombre": "Meropenem 1g c/8h", "via": "EV", "inicio": "2025-12-19", "fin": "2025-12-26" },
+    { "codigo": "ATC:J01XA01", "nombre": "Ceftriaxona", "via": "EV", "inicio": "2025-12-15", "fin": "2025-12-17" },
+    { "codigo": "ATC:J01XD01", "nombre": "Metronidazol", "via": "EV", "inicio": "2025-12-15", "fin": "2025-12-17" }
+  ],
+  "evolucion_resumen": [
+    {
+      "dia": 1,
+      "texto": "TORAX- PLEUROSTOMIA PACIENTE POST OP DE CIRUGIA DE MILES. DERRAME PLEURAL BILATERAL, A DERECHA MODERADO A SEVERO ACTUALMENTE EN TAC DE TORAX DE CONTROL. SE INSTALA PLEUROSTOMIA 24 FR, LA QUE SE FIJA EN 14 CM, DANDO SALIDA A 1000 CC DE CONTENIDO SERORO OSCURO. SE CLAMPEA POR TOS. SE TOMAN MUESTRAS PARA ESTUDIO DE LIQUIDO: CITOQUIMICO, PH, CULTIVO. SE SUGIERE: - EVACUAR 500 CC CADA 1HR HASTA DEJAR DESCLAMPEADO. - MANANA ASPIRATIVO A PARTIR DE LAS 8 AM. - CONTROL DE RX MANANA - KNT R Y M + TRIFLO"
+    },
+    {
+      "dia": 2,
+      "texto": "TORAX ESTABLE, PLEUROSTOMIA 1340 CC SEROHEMATICO. RADIOGRAFIA CON EXPANSION PULMONAR COMPLETA. EX: MP + DISMINUIDO A BASE DERECHA ESTUDIO INICIAL DE LIQUIDO PLEURAL, COMPATIBLE CON EXUDADO. SE SUGIERE: MANTENER ASPIRATIVO KNT R Y M + TRIFLO SEGUIMIENTO DE PLEUROSTOMIA"
+    },
+    {
+      "dia": 3,
+      "texto": "TORAX PACIENTE ESTABLE, SIN DIFICULTAD RESPIRATORIA, SAT 96-98 CON FIO2 AMBIENTAL. PLEUROSTOMIA 800 CC SEROSO ULTIMAS 12 HRS. ULTIMO TAC CON SIGNOS DE DHC E HIPERTENSION PORTAL, ASOCIADO A ASCITIS EN ESTE CONTEXTO, ESTO PUEDE ESTAR FAVORECIENDO ALTO DEBITO DE DRENAJE PLEURAL. EX: MP CONSERVADO A DERECHA, LEVEMENTE DISMINUIDO A IZQUIERDA. SE SUGIERE: POR AHORA DRENAJE NO ASPIRATIVO CAMBIO DE ACQUEASEAL DE SER NECESARIO CONTROL DE RX MANANA SE SUGIERE EVALUAR COMPONENTE DE DHC Y MANEJO A FIN DE DISMINUIR DEBITO DE DRENAJE TORACICO"
+    },
+    {
+      "dia": 4,
+      "texto": "TORAX ESTABLE RESPIRATORIO 400 CC EN 12 HRS. PROBABLEMENTE EN CONTEXTO DE ASCITIS Y SIGNOS DE DHC + HIPERTENSION PORTAL EX: MP + CONSERVADO SRA PLAN: MANTENER SEP NO ASPIRATIVO KN T R Y M POR 2 VECES DIA CONTROL DE RX HOY (ORDEN REALIZADA) SE SUGIERE EVALUACION POR MEDICINA INTERNA/GASTRO | EN SIMILARES CONDICIONES. CON NAUSEAS"
+    },
+    {
+      "dia": 5,
+      "texto": "TORAX ESTABLE, RADIOGRAFIA DE AYER CON EXPANSION COMPLETA, SIN DIFICULTAD RESPIRATORIA. ACQUASEAL AL TOPE. SE INDICA CAMBIO INMEDIATO. EX: MP + CONSERVADO A DERECHA PLEUROSTOMIA 1000 CC EN 24 HRS SE SUGIERE: DEBE SER EVALUADA DEL PUNTO DE VISTA DE ASCITIS MANTENER KNT 2 VECES AL DIA + TRIFLO OBSERVAR DEBITOS EN FORMA ESTRICTA MANTENER NO ASPIRATIVO SEGUIMIENTO POR TORAX | Medicina interna Enterado. HTA, cirugia de cancer de colon hace 1 mes aprox. TAC con hallazgos compatibles con DHC. Desde ayer con nauseas y vomitos alimentarios. Ex fisico: impresiona icterica, abdomen distendido, timpanico. plan - ajusto terapia - exs: p. hepaticas - Evaluacion por Gastro - Reevaluacion SOS. | 68 anios, sin alergias conocidas. AM: HTA, cardiopatia hipertensiva, FA paroxistica, enfermedad hepatica cronica con HTP. Cx: protesis de cadera derecha (por artrosis severa) Mascotas: gatos En el marco de un Ca de recto que progreso a pesar de QMT, se hospitalizo para Cx de miles. Evoluciono en el post op con colecciones perineal y en excavacion pelviana. Ya esta en sala, se alimenta poco, con nauseas y vomitos persistentes. Parametros inflamatorios estacionarios (PCR 15), GB: 12.770, VHS: 9 se sugiere: 1.- Suspender piperacilina-tazobactam 2.- Meropenem 1 gr cada 8 IV 3.- TAC de abdomen y pelvis c/c 4.- Considerar traslado a sala de mayor complejidad atte AGUAYO"
+    },
+    {
+      "dia": 6,
+      "texto": "TORAX ESTABLE, TAC DE TORAX DE CONTROL CON MINIMO DERRAME RESIDUAL DERECHO Y LEVE IZQUIERDO. EXPANSION ADECUADA. ACTUALMENTE 120 CC EN 12 HRS PLAN: MANTENER NO ASPIRATIVO KNT + TRIFLO SE REEVALUARA RETIRO SEGUN DEBITO"
+    },
+    {
+      "dia": 7,
+      "texto": "TORAX ESTABLE DEL PUNTO DE VISTA VENTILATORIO DISMINUCION DEL DEBITO DIARIO. 300 CC EN 24 HRS. ACTUALMENTE EN MANEJO DE LIQUIDO ASCITICO, CON BUENA RESPUESTA SE SUGIERE: MANTENER NO ASPIRATIVO RETIRO CON DEBITO CERCANO A 150 CC KN T R Y M"
+    },
+    {
+      "dia": 8,
+      "texto": "TORAX ESTABLE, 550 CC EN 24 HRS. SIN COMPROMISO VENTILATORIO. EN ESPERA DE DISMINUCION DE DEBITO PARA RETIRO DE SEP. POR AHORA SIN CAMBIOS"
+    },
+    {
+      "dia": 9,
+      "texto": "TORAX ESTABLE, HOY 390 CC DE DEBITO. EX: MP + CONSERVADO PLAN: MANTENER KNT MANTENER NO ASPIRATIVO EVENTUAL RETIRO MANANA SEGUN DEBITO"
+    },
+    {
+      "dia": 10,
+      "texto": "TORAX ESTABLE 310 CC EN 24 HRS (PERO 50 CC MAS EN LA BAJA POST MEDICION) DE TODAS FORMAS CON DEBITO A LA BAJA, LENTO SE CONVERSA CON PACIENTE, SE DECIDE MANTENER PLAN: KNT R Y M MANTENER NO ASPIRATIVO MANTENER MANEJO DE ASCITIS (EL CUAL HA SIDO EFECTIVO)"
+    },
+    {
+      "dia": 12,
+      "texto": "TORAX ESTABLE, DEBITO DE 50 CC EN 24 HRS, POR LO QUE SE DECIDE RETIRO. PROCEDIMIENTO SIN INCIDENTES. PLAN: MANTENER CON KNT CAMBIO DE APOSITO SOS RETIRO DE PUNTOS EN 5-7 DIAS REEVALUACION POR CIRUGIA DE TORAX SOS"
+    }
+  ],
+  "laboratorios_resumen": [
+    {
+      "prueba": "Hemoglobina en sangre total",
+      "unidad": "g/dL",
+      "ingreso": {
+        "valor": 7.8,
+        "fecha": "2025-12-25T07:11:09",
+        "rango_inferior": 12.3,
+        "rango_superior": 15.3,
+        "estado": "bajo"
+      },
+      "periodo": {
+        "min": 7.8,
+        "max": 7.8
+      }
+    },
+    {
+      "prueba": "Hematocrito",
+      "unidad": "%",
+      "ingreso": {
+        "valor": 23.7,
+        "fecha": "2025-12-25T07:11:09",
+        "rango_inferior": 35,
+        "rango_superior": 47,
+        "estado": "bajo"
+      },
+      "periodo": {
+        "min": 23.7,
+        "max": 23.7
+      }
+    },
+    {
+      "prueba": "Recuento de leucocitos (absoluto)",
+      "unidad": "x10^9/L",
+      "ingreso": {
+        "valor": 12.62,
+        "fecha": "2025-12-25T07:11:09",
+        "rango_inferior": 4.4,
+        "rango_superior": 11.3,
+        "estado": "alto"
+      },
+      "periodo": {
+        "min": 12.62,
+        "max": 12.62
+      }
+    },
+    {
+      "prueba": "Proteina C reactiva",
+      "unidad": "mg/dL",
+      "ingreso": {
+        "valor": 8.79,
+        "fecha": "2025-12-25T07:11:11",
+        "rango_inferior": 0,
+        "rango_superior": 0.49,
+        "estado": "alto"
+      },
+      "periodo": {
+        "min": 8.79,
+        "max": 8.79
+      }
+    },
+    {
+      "prueba": "Albumina en sangre",
+      "unidad": "g/dL",
+      "ingreso": {
+        "valor": 2.82,
+        "fecha": "2025-12-25T07:11:10",
+        "rango_inferior": 3.5,
+        "rango_superior": 5.2,
+        "estado": "bajo"
+      },
+      "periodo": {
+        "min": 2.82,
+        "max": 2.82
+      }
+    },
+    {
+      "prueba": "Potasio plasmatico",
+      "unidad": "mmol/L",
+      "ingreso": {
+        "valor": 3.3,
+        "fecha": "2025-12-25T07:11:10",
+        "rango_inferior": 3.5,
+        "rango_superior": 5.1,
+        "estado": "bajo"
+      },
+      "periodo": {
+        "min": 3.3,
+        "max": 3.3
+      }
+    },
+    {
+      "prueba": "Calcio en sangre",
+      "unidad": "mg/dL",
+      "ingreso": {
+        "valor": 7.6,
+        "fecha": "2025-12-25T07:11:10",
+        "rango_inferior": 8.8,
+        "rango_superior": 10.2,
+        "estado": "bajo"
+      },
+      "periodo": {
+        "min": 7.6,
+        "max": 7.6
+      }
+    },
+    {
+      "prueba": "Creatinina en sangre",
+      "unidad": "mg/dL",
+      "ingreso": {
+        "valor": 0.63,
+        "fecha": "2025-12-25T07:11:10",
+        "rango_inferior": 0.5,
+        "rango_superior": 0.9,
+        "estado": "normal"
+      },
+      "periodo": {
+        "min": 0.63,
+        "max": 0.63
+      }
+    },
+    {
+      "prueba": "Sodio plasmatico",
+      "unidad": "mmol/L",
+      "ingreso": {
+        "valor": 143.1,
+        "fecha": "2025-12-25T07:11:10",
+        "rango_inferior": 136,
+        "rango_superior": 145,
+        "estado": "normal"
+      },
+      "periodo": {
+        "min": 143.1,
+        "max": 143.1
+      }
+    },
+    {
+      "prueba": "Recuento de plaquetas (absoluto)",
+      "unidad": "x10^3/uL",
+      "ingreso": {
+        "valor": 170,
+        "fecha": "2025-12-25T07:11:09",
+        "rango_inferior": 150,
+        "rango_superior": 450,
+        "estado": "normal"
+      },
+      "periodo": {
+        "min": 170,
+        "max": 170
+      }
+    }
+  ],
+  "diagnostico_egreso": [
+    { "codigo": "C20", "nombre": "Tumor maligno del recto - Post operatorio cirugia de Miles" },
+    { "codigo": "J90", "nombre": "Derrame pleural bilateral resuelto" },
+    { "codigo": "K74.6", "nombre": "Enfermedad hepatica cronica con hipertension portal" },
+    { "codigo": "K65.0", "nombre": "Coleccion pelviana post quirurgica en tratamiento" }
+  ],
+  "indicaciones_alta": {
+    "medicamentos": [
+      { "codigo": "ATC:J01DH02", "nombre": "Meropenem", "dosis": "1g", "via": "EV", "frecuencia": "cada 8 horas", "duracion": "Completar esquema segun infectologia" }
+    ],
+    "controles": [
+      "Control con cirugia de torax en caso de sintomas respiratorios",
+      "Control con cirugia digestiva para seguimiento de colostomia",
+      "Control con infectologia para ajuste de antibioticos",
+      "Retiro de puntos de pleurostomia en 5-7 dias"
+    ],
+    "cuidados": [
+      "Curacion de herida perineal con VAC segun indicacion",
+      "Curacion de sitio de pleurostomia",
+      "Cuidados de colostomia",
+      "Kinesioterapia respiratoria y motora",
+      "Ejercicios con Triflo"
+    ],
+    "signos_alarma": [
+      "Fiebre mayor a 38C",
+      "Disnea o dificultad respiratoria",
+      "Dolor toracico",
+      "Aumento de volumen o secrecion por heridas",
+      "Nauseas o vomitos persistentes",
+      "Ictericia progresiva"
+    ]
+  }
+}
+
+
+
+Clave para la validación: que dx/meds/proc tengan un identificador estable ( codigo ).
+Si hoy solo tienes texto, igual se puede, pero la validación será más “heurística”.
+
+2) Prompt listo para producción (acotado y auditable)
+SYSTEM (fijo)
+
+txt
+Eres un asistente clínico que redacta informes de alta hospitalaria (epicr
+REGLAS ESTRICTAS:
+1) Usa EXCLUSIVAMENTE los datos entregados en el JSON. No inventes diagnós
+2) Si falta un dato necesario, escribe literalmente: "No consignado".
+3) No incluyas información personal identificable adicional a sexo y edad
+4) Redacta en 1 solo párrafo, formal, claro y conciso.
+5) No enumeres valores de laboratorio salvo que el JSON incluya números; s
+6) No menciones marcas comerciales; usa nombres genéricos tal como aparece
+7) No agregues recomendaciones nuevas: solo las indicaciones de alta del J
+SALIDA: Un único párrafo (sin viñetas, sin títulos).
+
+USER (variable)
+txt
+Genera una epicrisis (informe de alta) en un solo párrafo con esta estruct
+- Motivo y diagnóstico de ingreso
+- Procedimientos y tratamientos relevantes durante hospitalización
+- Evolución clínica resumida (por días si corresponde, sin repetir)
+- Diagnóstico(s) de egreso
+- Indicaciones post-alta: medicamentos (con dosis/vía/frecuencia/duración)
+
+JSON CLÍNICO:
+{{JSON_CLINICO}}
+
+Por qué funciona: el LLM queda “encerrado” en un único documento fuente (tu JSON),
+por lo que ya no necesitas RAG para el alta.
+
+3) Validador con listas blancas (dx/meds/proc)
+Estrategia de validación (robusta)
+1. Construyes listas blancas desde el JSON:
+dxWhitelist : set de códigos + nombres normalizados
+procWhitelist
+medWhitelist (de alta y/o intrahospital según lo que permitas mencionar)
+2. Del texto generado, detectas menciones:
+Primero por códigos (si obligas al modelo a incluirlos, más fácil)
+Si no incluyes códigos, haces matching por nombres normalizados y sinónimos
+controlados
+3. Si detectas una mención que no está en whitelist → falla y se regenera con un
+prompt correctivo.
+4) Código de validador (TypeScript/JS) usable
+JSON CLÍNICO:
+{{JSON_CLINICO}}
+Este validador es pragmático: normaliza, tokeniza, busca menciones por “frases” y
+compara contra whitelist. Para producción clínica, recomiendo además mantener una
+tabla de sinónimos (ej. “TAC” ~ “Tomografía computada”).
+ts
+
+type Item = { codigo?: string; nombre: string };
+type Med = { codigo?: string; nombre: string; dosis?: string; via?: string; frecuencia?: string; duracion?: string };
+
+function normalize(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD").replace(/\p{Diacritic}/gu, "") // quita tildes
+    .replace(/[^a-z0-9\s\/\-]/g, " ")               // limpia símbolos
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function makeWhitelist(items: Item[]): { codes: Set<string>; names: Set<string> } {
+  const codes = new Set<string>();
+  const names = new Set<string>();
+  for (const it of items || []) {
+    if (it.codigo) codes.add(normalize(it.codigo));
+    names.add(normalize(it.nombre));
+  }
+  return { codes, names };
+}
+
+// extrae frases candidatas: n-grams simples (2 a 6 palabras)
+function extractNgrams(textNorm: string, minN = 2, maxN = 6): Set<string> {
+  const words = textNorm.split(" ").filter(Boolean);
+  const out = new Set<string>();
+  for (let n = minN; n <= maxN; n++) {
+    for (let i = 0; i + n <= words.length; i++) {
+      out.add(words.slice(i, i + n).join(" "));
+    }
+  }
+  return out;
+}
+
+type ValidationResult = {
+  ok: boolean;
+  violations: {
+    type: "dx" | "proc" | "med";
+    mention: string;
+    reason: string;
+  }[];
+};
+
+type ClinicalJson = {
+  diagnostico_ingreso?: Item[];
+  diagnostico_egreso?: Item[];
+  procedimientos?: Item[];
+  tratamientos_intrahosp?: Med[];
+  indicaciones_alta?: { medicamentos?: Med[] };
+};
+
+export function validateEpicrisis(text: string, data: ClinicalJson): ValidationResult {
+  const textNorm = normalize(text);
+  const grams = extractNgrams(textNorm);
+
+  // whitelist: permite mencionar dx ingreso + egreso
+  const dxWL = makeWhitelist([...(data.diagnostico_ingreso || []), ...(data.diagnostico_egreso || [])]);
+  const procWL = makeWhitelist(data.procedimientos || []);
+  // meds permitidos: alta + (opcional) intrahosp si quieres que aparezcan en narrativa
+  const medWL = makeWhitelist([
+    ...((data.indicaciones_alta?.medicamentos || []).map(m => ({ codigo: m.codigo, nombre: m.nombre }))),
+    ...((data.tratamientos_intrahosp || []).map(m => ({ codigo: m.codigo, nombre: m.nombre }))),
+  ]);
+
+  // diccionario de sinónimos CONTROLADOS (puedes expandirlo)
+  const synonyms: Record<string, string[]> = {
+    "tac": ["tomografia computada", "tc"],
+    "uci": ["unidad de cuidados intensivos"],
+  };
+
+  function allowedMention(mention: string, wl: { codes: Set<string>; names: Set<string> }): boolean {
+    const m = normalize(mention);
+    if (wl.codes.has(m)) return true;
+    if (wl.names.has(m)) return true;
+    // aplica sinónimos hacia nombres permitidos
+    for (const [key, syns] of Object.entries(synonyms)) {
+      if (m === key || syns.includes(m)) {
+        // si el “concepto” existe en whitelist por su forma canónica, lo damos por válido
+        if (wl.names.has(key)) return true;
+        for (const s of syns) if (wl.names.has(s)) return true;
+      }
+    }
+    return false;
+  }
+
+  // Heurística: si aparece una frase que parece “medicamento/procedimiento/dx” pero no está en WL => viola.
+  // Para bajar falsos positivos, validamos solo contra candidatos que coinciden “parcialmente” con términos médicos comunes.
+  const medicalTriggers = [
+    "mg", "ev", "vo", "im", "sc", "cada", "hrs", "horas", "dias",
+    "diagnostico", "neumonia", "insuficiencia", "fractura", "sepsis",
+    "cirugia", "procedimiento", "tac", "rx", "ecg", "endoscopia",
+    "antibiotico", "analgesia"
+  ];
+
+  const violations: ValidationResult["violations"] = [];
+
+  function checkCategory(type: "dx" | "proc" | "med", wl: { codes: Set<string>; names: Set<string> }) {
+    for (const g of grams) {
+      // filtra por “parece clínico”
+      const hasTrigger = medicalTriggers.some(t => g.includes(t));
+      if (!hasTrigger) continue;
+
+      // si g es exactamente uno de los nombres permitidos, ok
+      if (wl.names.has(g)) continue;
+
+      // si g parece un código (CIE10/ATC/etc) y no está en codes, marca
+      if (/^[a-z]\d{2}(\.\d)?$/i.test(g) || g.startsWith("atc:") || /^[a-z0-9]{3,10}[:\-][a-z0-9]{2,10}$/i.test(g)) {
+        if (!wl.codes.has(g)) {
+          violations.push({ type, mention: g, reason: "Código no permitido por whitelist" });
+        }
+        continue;
+      }
+
+      // detección “soft”: si contiene una palabra de un nombre permitido, no lo consideres violación.
+      // (evita falsos positivos por frases largas tipo “se indica azitromicina 500 mg…”)
+      let overlapsAllowed = false;
+      for (const name of wl.names) {
+        // si la frase contiene el nombre permitido (substring), lo damos por permitido
+        if (g.includes(name) && name.length >= 5) { overlapsAllowed = true; break; }
+      }
+      if (overlapsAllowed) continue;
+
+      // si parece un término clínico pero no match, lo reportamos como “posible alucinación”
+      // (en producción puedes hacerlo “warning” y no bloquear si no quieres ser tan estricto)
+      // aquí lo hacemos estricto
+      violations.push({ type, mention: g, reason: "Mención clínica no encontrada en whitelist" });
+    }
+  }
+
+  // chequeos separados (puedes ajustar triggers por categoría)
+  checkCategory("dx", dxWL);
+  checkCategory("proc", procWL);
+  checkCategory("med", medWL);
+
+  // dedupe violaciones
+  const seen = new Set<string>();
+  const uniq = violations.filter(v => {
+    const k = `${v.type}|${v.mention}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+
+  return { ok: uniq.length === 0, violations: uniq };
+}
+
+Qué hace este validador
+Si el texto menciona algo con pinta clínica (por triggers) y no coincide con whitelist
+→ bloquea.
+Evita falsos positivos cuando una frase larga contiene un nombre permitido
+(substring).
+Puedes ajustar el modo estricto (bloquear) vs “warning”.
+
+5) Prompt de “corrección” para regenerar cuando falla
+Cuando validateEpicrisis().ok === false , regeneras con este USER adicional:
+
+txt
+Tu texto anterior contiene menciones NO permitidas (alucinaciones) o fuera
+Debes reescribir el informe de alta en 1 solo párrafo CUMPLIENDO:
+- Solo puedes mencionar diagnósticos de esta lista: {{DX_LISTA}}
+- Solo puedes mencionar procedimientos de esta lista: {{PROC_LISTA}}
+- Solo puedes mencionar medicamentos de esta lista: {{MED_LISTA}}
+Si necesitas algo fuera de las listas, escribe "No consignado".
+Reescribe completo el informe usando el mismo JSON.
+JSON CLÍNICO:
+{{JSON_CLINICO}}
+
+Donde DX_LISTA/PROC_LISTA/MED_LISTA son los nombres (y/o códigos) extraídos del
+JSON.
+
+6) Recomendación clave para que esto quede “a prueba de clínica”
+Para bajar falsos positivos y subir control:
+En el prompt, exige que el modelo incluya códigos entre paréntesis:
+“Neumonía bacteriana (J15.9)”
+“Azitromicina (ATC:J01FA10)”
+Así la validación se vuelve casi perfecta porque verificas códigos exactos y no dependes
+de texto.
+Si me pegas un ejemplo real (anonimizado) del JSON que ya construyes, te adapto:
+lista blanca exacta (qué permites mencionar en narrativa vs solo en indicaciones),
+reglas de “tratamientos intrahosp sí/no”,
+y un set de triggers/sinónimos clínicos Chile (TAC/TC, UCI/UPC, EV/IV, etc.) para
+reducir falsos positivos.
+
+

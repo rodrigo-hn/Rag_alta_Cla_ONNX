@@ -1,0 +1,201 @@
+{
+  "laboratorios_resumen" :
+  [
+    {
+      "prueba" : "Albumina en sangre",
+      "unidad" : "g/dL",
+      "ingreso" :
+      {
+        "valor" : 2.82,
+        "fecha" : "2025-12-25T07:11:10",
+        "estado" : "bajo"
+      }
+    },
+    {
+      "prueba" : "Basofilos",
+      "unidad" : "%",
+      "ingreso" :
+      {
+        "valor" : 0.3,
+        "fecha" : "2025-12-25T07:11:09",
+        "estado" : "normal"
+      }
+    },
+    {
+      "prueba" : "C.H.C.M.",
+      "unidad" : "g/dL",
+      "ingreso" :
+      {
+        "valor" : 32.9,
+        "fecha" : "2025-12-25T07:11:09",
+        "estado" : "normal"
+      }
+    },
+    {
+      "prueba" : "Calcio en sangre",
+      "unidad" : "mg/dL",
+      "ingreso" :
+      {
+        "valor" : 7.6,
+        "fecha" : "2025-12-25T07:11:10",
+        "estado" : "bajo"
+      }
+    },
+    {
+      "prueba" : "Cloro plasmatico",
+      "unidad" : "mmol/L",
+      "ingreso" :
+      {
+        "valor" : 106,
+        "fecha" : "2025-12-25T07:11:10",
+        "estado" : "normal"
+      }
+    },
+    {
+      "prueba" : "Creatinina en sangre",
+      "unidad" : "mg/dL",
+      "ingreso" :
+      {
+        "valor" : 0.63,
+        "fecha" : "2025-12-25T07:11:10",
+        "estado" : "normal"
+      }
+    },
+    {
+      "prueba" : "Eosinofilos",
+      "unidad" : "%",
+      "ingreso" :
+      {
+        "valor" : 4.6,
+        "fecha" : "2025-12-25T07:11:09",
+        "estado" : "alto"
+      }
+    },
+    {
+      "prueba" : "Fosforo en sangre",
+      "unidad" : "mg/dL",
+      "ingreso" :
+      {
+        "valor" : 2.41,
+        "fecha" : "2025-12-25T07:11:10",
+        "estado" : "bajo"
+      }
+    },
+    {
+      "prueba" : "H.C.M.",
+      "unidad" : "pg",
+      "ingreso" :
+      {
+        "valor" : 31.1,
+        "fecha" : "2025-12-25T07:11:09",
+        "estado" : "normal"
+      }
+    },
+    {
+      "prueba" : "Hematocrito",
+      "unidad" : "%",
+      "ingreso" :
+      {
+        "valor" : 23.7,
+        "fecha" : "2025-12-25T07:11:09",
+        "estado" : "bajo"
+      }
+    },
+    {
+      "prueba" : "Hemoglobina en sangre total",
+      "unidad" : "g/dL",
+      "ingreso" :
+      {
+        "valor" : 7.8,
+        "fecha" : "2025-12-25T07:11:09",
+        "estado" : "bajo"
+      }
+    },
+    {
+      "prueba" : "Linfocitos",
+      "unidad" : "%",
+      "ingreso" :
+      {
+        "valor" : 11.3,
+        "fecha" : "2025-12-25T07:11:10",
+        "estado" : "bajo"
+      }
+    },
+    {
+      "prueba" : "Magnesio en sangre",
+      "unidad" : "mg/dL",
+      "ingreso" :
+      {
+        "valor" : 1.96,
+        "fecha" : "2025-12-25T07:11:11",
+        "estado" : "normal"
+      }
+    },
+    {
+      "prueba" : "Monocitos",
+      "unidad" : "%",
+      "ingreso" :
+      {
+        "valor" : 7.6,
+        "fecha" : "2025-12-25T07:11:10",
+        "estado" : "normal"
+      }
+    },
+    {
+      "prueba" : "Nitrogeno ureico en sangre",
+      "unidad" : "mg/dL",
+      "ingreso" :
+      {
+        "valor" : 13,
+        "fecha" : "2025-12-25T07:11:11",
+        "estado" : "normal"
+      }
+    },
+    {
+      "prueba" : "Potasio plasmatico",
+      "unidad" : "mmol/L",
+      "ingreso" :
+      {
+        "valor" : 3.3,
+        "fecha" : "2025-12-25T07:11:10",
+        "estado" : "bajo"
+      }
+    },
+    {
+      "prueba" : "Proteina C reactiva",
+      "unidad" : "mg/dL",
+      "ingreso" :
+      {
+        "valor" : 8.79,
+        "fecha" : "2025-12-25T07:11:11",
+        "estado" : "alto"
+      }
+    },
+    {
+      "prueba" : "RDW-CV",
+      "unidad" : "%",
+      "ingreso" :
+      {
+        "valor" : 21.5,
+        "fecha" : "2025-12-25T07:11:09",
+        "estado" : "alto"
+      }
+    },
+    {
+      "prueba" : "Recuento de leucocitos (absoluto)",
+      "unidad" : "x10^9/L",
+      "ingreso" :
+      {
+        "valor" : 12.62,
+        "fecha" : "2025-12-25T07:11:09",
+        "estado" : "alto"
+      }
+    },
+    {
+      "prueba" : "Recuento de linfocitos (absoluto)",
+      "unidad" : "x10^3/uL",
+      "ingreso" :
+      {
+        "valor" : 1.43,
+        "fecha" : "2025-12
+

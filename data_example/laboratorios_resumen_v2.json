@@ -1,0 +1,455 @@
+{
+    "id_atencion": 1416169,
+    "laboratorios_resumen": [
+        {
+            "prueba": "Albumina en sangre",
+            "unidad": "g/dL",
+            "ingreso": {
+                "valor": 2.82,
+                "fecha": "2025-12-25T07:11:10",
+                "rango_inferior": 3.5,
+                "rango_superior": 5.2,
+                "estado": "bajo"
+            },
+            "periodo": {
+                "min": 2.82,
+                "max": 2.82
+            }
+        },
+        {
+            "prueba": "Basofilos",
+            "unidad": "%",
+            "ingreso": {
+                "valor": 0.3,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 0,
+                "rango_superior": 1,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 0.3,
+                "max": 0.3
+            }
+        },
+        {
+            "prueba": "C.H.C.M.",
+            "unidad": "g/dL",
+            "ingreso": {
+                "valor": 32.9,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 32,
+                "rango_superior": 36,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 32.9,
+                "max": 32.9
+            }
+        },
+        {
+            "prueba": "Calcio en sangre",
+            "unidad": "mg/dL",
+            "ingreso": {
+                "valor": 7.6,
+                "fecha": "2025-12-25T07:11:10",
+                "rango_inferior": 8.8,
+                "rango_superior": 10.2,
+                "estado": "bajo"
+            },
+            "periodo": {
+                "min": 7.6,
+                "max": 7.6
+            }
+        },
+        {
+            "prueba": "Cloro plasmatico",
+            "unidad": "mmol/L",
+            "ingreso": {
+                "valor": 106,
+                "fecha": "2025-12-25T07:11:10",
+                "rango_inferior": 98,
+                "rango_superior": 107,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 106,
+                "max": 106
+            }
+        },
+        {
+            "prueba": "Creatinina en sangre",
+            "unidad": "mg/dL",
+            "ingreso": {
+                "valor": 0.63,
+                "fecha": "2025-12-25T07:11:10",
+                "rango_inferior": 0.5,
+                "rango_superior": 0.9,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 0.63,
+                "max": 0.63
+            }
+        },
+        {
+            "prueba": "Eosinofilos",
+            "unidad": "%",
+            "ingreso": {
+                "valor": 4.6,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 0,
+                "rango_superior": 3,
+                "estado": "alto"
+            },
+            "periodo": {
+                "min": 4.6,
+                "max": 4.6
+            }
+        },
+        {
+            "prueba": "Fosforo en sangre",
+            "unidad": "mg/dL",
+            "ingreso": {
+                "valor": 2.41,
+                "fecha": "2025-12-25T07:11:10",
+                "rango_inferior": 2.5,
+                "rango_superior": 4.5,
+                "estado": "bajo"
+            },
+            "periodo": {
+                "min": 2.41,
+                "max": 2.41
+            }
+        },
+        {
+            "prueba": "H.C.M.",
+            "unidad": "pg",
+            "ingreso": {
+                "valor": 31.1,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 28,
+                "rango_superior": 33,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 31.1,
+                "max": 31.1
+            }
+        },
+        {
+            "prueba": "Hematocrito",
+            "unidad": "%",
+            "ingreso": {
+                "valor": 23.7,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 35,
+                "rango_superior": 47,
+                "estado": "bajo"
+            },
+            "periodo": {
+                "min": 23.7,
+                "max": 23.7
+            }
+        },
+        {
+            "prueba": "Hemoglobina en sangre total",
+            "unidad": "g/dL",
+            "ingreso": {
+                "valor": 7.8,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 12.3,
+                "rango_superior": 15.3,
+                "estado": "bajo"
+            },
+            "periodo": {
+                "min": 7.8,
+                "max": 7.8
+            }
+        },
+        {
+            "prueba": "Linfocitos",
+            "unidad": "%",
+            "ingreso": {
+                "valor": 11.3,
+                "fecha": "2025-12-25T07:11:10",
+                "rango_inferior": 25,
+                "rango_superior": 40,
+                "estado": "bajo"
+            },
+            "periodo": {
+                "min": 11.3,
+                "max": 11.3
+            }
+        },
+        {
+            "prueba": "Magnesio en sangre",
+            "unidad": "mg/dL",
+            "ingreso": {
+                "valor": 1.96,
+                "fecha": "2025-12-25T07:11:11",
+                "rango_inferior": 1.6,
+                "rango_superior": 2.4,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 1.96,
+                "max": 1.96
+            }
+        },
+        {
+            "prueba": "Monocitos",
+            "unidad": "%",
+            "ingreso": {
+                "valor": 7.6,
+                "fecha": "2025-12-25T07:11:10",
+                "rango_inferior": 4.3,
+                "rango_superior": 11,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 7.6,
+                "max": 7.6
+            }
+        },
+        {
+            "prueba": "Nitrogeno ureico en sangre",
+            "unidad": "mg/dL",
+            "ingreso": {
+                "valor": 13,
+                "fecha": "2025-12-25T07:11:11",
+                "rango_inferior": 8,
+                "rango_superior": 23,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 13,
+                "max": 13
+            }
+        },
+        {
+            "prueba": "Potasio plasmatico",
+            "unidad": "mmol/L",
+            "ingreso": {
+                "valor": 3.3,
+                "fecha": "2025-12-25T07:11:10",
+                "rango_inferior": 3.5,
+                "rango_superior": 5.1,
+                "estado": "bajo"
+            },
+            "periodo": {
+                "min": 3.3,
+                "max": 3.3
+            }
+        },
+        {
+            "prueba": "Proteina C reactiva",
+            "unidad": "mg/dL",
+            "ingreso": {
+                "valor": 8.79,
+                "fecha": "2025-12-25T07:11:11",
+                "rango_inferior": 0,
+                "rango_superior": 0.49,
+                "estado": "alto"
+            },
+            "periodo": {
+                "min": 8.79,
+                "max": 8.79
+            }
+        },
+        {
+            "prueba": "RDW-CV",
+            "unidad": "%",
+            "ingreso": {
+                "valor": 21.5,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 11.7,
+                "rango_superior": 14.4,
+                "estado": "alto"
+            },
+            "periodo": {
+                "min": 21.5,
+                "max": 21.5
+            }
+        },
+        {
+            "prueba": "Recuento de leucocitos (absoluto)",
+            "unidad": "x10^9/L",
+            "ingreso": {
+                "valor": 12.62,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 4.4,
+                "rango_superior": 11.3,
+                "estado": "alto"
+            },
+            "periodo": {
+                "min": 12.62,
+                "max": 12.62
+            }
+        },
+        {
+            "prueba": "Recuento de linfocitos (absoluto)",
+            "unidad": "x10^3/uL",
+            "ingreso": {
+                "valor": 1.43,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 1.16,
+                "rango_superior": 3.18,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 1.43,
+                "max": 1.43
+            }
+        },
+        {
+            "prueba": "Recuento de neutrofilos (absoluto)",
+            "unidad": "x10^3/uL",
+            "ingreso": {
+                "valor": 9.47,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 2,
+                "rango_superior": 7.15,
+                "estado": "alto"
+            },
+            "periodo": {
+                "min": 9.47,
+                "max": 9.47
+            }
+        },
+        {
+            "prueba": "Recuento de plaquetas (absoluto)",
+            "unidad": "x10^3/uL",
+            "ingreso": {
+                "valor": 170,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 150,
+                "rango_superior": 450,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 170,
+                "max": 170
+            }
+        },
+        {
+            "prueba": "Recuento eritrocitos (absoluto)",
+            "unidad": "x10^6/uL",
+            "ingreso": {
+                "valor": 2.51,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 4.1,
+                "rango_superior": 5.1,
+                "estado": "bajo"
+            },
+            "periodo": {
+                "min": 2.51,
+                "max": 2.51
+            }
+        },
+        {
+            "prueba": "Segmentados",
+            "unidad": "%",
+            "ingreso": {
+                "valor": 76.2,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 50,
+                "rango_superior": 70,
+                "estado": "alto"
+            },
+            "periodo": {
+                "min": 76.2,
+                "max": 76.2
+            }
+        },
+        {
+            "prueba": "Sodio plasmatico",
+            "unidad": "mmol/L",
+            "ingreso": {
+                "valor": 143.1,
+                "fecha": "2025-12-25T07:11:10",
+                "rango_inferior": 136,
+                "rango_superior": 145,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 143.1,
+                "max": 143.1
+            }
+        },
+        {
+            "prueba": "Total",
+            "unidad": "%",
+            "ingreso": {
+                "valor": 100,
+                "fecha": "2025-12-25T07:11:10",
+                "rango_inferior": 100,
+                "rango_superior": 100,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 100,
+                "max": 100
+            }
+        },
+        {
+            "prueba": "Urea en sangre",
+            "unidad": "mg/dL",
+            "ingreso": {
+                "valor": 27.9,
+                "fecha": "2025-12-25T07:11:11",
+                "rango_inferior": 16.6,
+                "rango_superior": 48.5,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 27.9,
+                "max": 27.9
+            }
+        },
+        {
+            "prueba": "V.C.M.",
+            "unidad": "fL",
+            "ingreso": {
+                "valor": 94.4,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 80,
+                "rango_superior": 96,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 94.4,
+                "max": 94.4
+            }
+        },
+        {
+            "prueba": "V.P.M.",
+            "unidad": "fL",
+            "ingreso": {
+                "valor": 10,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 8,
+                "rango_superior": 13,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 10,
+                "max": 10
+            }
+        },
+        {
+            "prueba": "Velocidad de sedimentacion",
+            "unidad": "mm/hr",
+            "ingreso": {
+                "valor": 2,
+                "fecha": "2025-12-25T07:11:09",
+                "rango_inferior": 0,
+                "rango_superior": 30,
+                "estado": "normal"
+            },
+            "periodo": {
+                "min": 2,
+                "max": 2
+            }
+        }
+    ]
+}

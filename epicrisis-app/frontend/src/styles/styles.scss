@@ -1,0 +1,291 @@
+// Estilos globales para la aplicación de Epicrisis
+
+// Variables
+$primary-color: #1976d2;
+$accent-color: #ff4081;
+$warn-color: #f44336;
+$success-color: #4caf50;
+$background-color: #fafafa;
+$card-background: #ffffff;
+
+// Reset básico
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Roboto', sans-serif;
+  background-color: $background-color;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+// Utilidades
+.full-width {
+  width: 100%;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-1 { margin-top: 8px; }
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 24px; }
+.mb-1 { margin-bottom: 8px; }
+.mb-2 { margin-bottom: 16px; }
+.mb-3 { margin-bottom: 24px; }
+
+.p-1 { padding: 8px; }
+.p-2 { padding: 16px; }
+.p-3 { padding: 24px; }
+
+// Layout
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.grid-2-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Cards
+.card-section {
+  background-color: $card-background;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+// Estados
+.success-state {
+  background-color: rgba($success-color, 0.1);
+  border: 1px solid $success-color;
+  color: color-mix(in srgb, $success-color 90%, black);
+}
+
+.error-state {
+  background-color: rgba($warn-color, 0.1);
+  border: 1px solid $warn-color;
+  color: color-mix(in srgb, $warn-color 90%, black);
+}
+
+.warning-state {
+  background-color: rgba(#ff9800, 0.1);
+  border: 1px solid #ff9800;
+  color: color-mix(in srgb, #ff9800 90%, black);
+}
+
+// Loading
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+// Empty states
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: #757575;
+
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: #bdbdbd;
+    margin-bottom: 16px;
+  }
+
+  p {
+    font-size: 16px;
+    margin-top: 8px;
+  }
+}
+
+// Scrollbar personalizada
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+// Animaciones
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+// Material overrides
+.mat-mdc-card {
+  margin-bottom: 24px;
+}
+
+.mat-mdc-raised-button {
+  text-transform: none;
+}
+
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+// JSON viewer styles
+.json-viewer {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  background-color: #f5f5f5;
+  padding: 16px;
+  border-radius: 4px;
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+
+  .json-key {
+    color: #881391;
+  }
+
+  .json-string {
+    color: #1a1aa6;
+  }
+
+  .json-number {
+    color: #1c00cf;
+  }
+
+  .json-boolean {
+    color: #0d22aa;
+  }
+
+  .json-null {
+    color: #808080;
+  }
+}
+
+// Epicrisis text
+.epicrisis-text {
+  padding: 24px;
+  background-color: #fafafa;
+  border-radius: 8px;
+  line-height: 1.8;
+  font-size: 14px;
+  min-height: 200px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  border: 1px solid #e0e0e0;
+}
+
+// Validation badges
+.validation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+
+  &.success {
+    background-color: $success-color;
+    color: white;
+  }
+
+  &.error {
+    background-color: $warn-color;
+    color: white;
+  }
+
+  &.warning {
+    background-color: #ff9800;
+    color: white;
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// Violations list
+.violations-list {
+  margin-top: 16px;
+
+  .violation-item {
+    padding: 12px;
+    border-left: 4px solid $warn-color;
+    background-color: rgba($warn-color, 0.05);
+    margin-bottom: 8px;
+    border-radius: 0 4px 4px 0;
+
+    .violation-type {
+      font-weight: 500;
+      color: $warn-color;
+    }
+
+    .violation-mention {
+      font-family: monospace;
+      background-color: rgba(0, 0, 0, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin: 0 4px;
+    }
+
+    .violation-reason {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+  }
+}
+
+// Export buttons
+.export-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}

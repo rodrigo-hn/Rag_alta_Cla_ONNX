@@ -1,0 +1,281 @@
+CAMPO1,CAMPO2,CAMPO3,CAMPO4,TIPO_CONSULTA,EDITAR,SUCURSAL,ID_ATENCION
+25/12/2025,ALBUMINA EN SANGRE,Hospitalizado,03-02-101-00,LAB,                                ,1,1416169
+25/12/2025,CALCIO EN SANGRE,Hospitalizado,03-02-015-00,LAB,                                ,1,1416169
+25/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1416169
+25/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1416169
+25/12/2025,FOSFORO EN SANGRE,Hospitalizado,03-02-042-00,LAB,                                ,1,1416169
+25/12/2025,UREA EN SANGRE,Hospitalizado,03-02-057-03,LAB,                                ,1,1416169
+25/12/2025,MAGNESIO EN SANGRE,Hospitalizado,03-02-056-00,LAB,                                ,1,1416169
+25/12/2025,NITROGENO UREICO EN SANGRE,Hospitalizado,03-02-057-02,LAB,                                ,1,1416169
+25/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1416169
+25/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1416169
+25/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1416169
+25/12/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1416169
+24/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1416035
+24/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1416035
+24/12/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1416035
+24/12/2025,NITROGENO UREICO EN SANGRE,Hospitalizado,03-02-057-02,LAB,                                ,1,1416035
+24/12/2025,TIEMPO DE PROTROMBINA INCLUYE INR,Hospitalizado,03-01-059-00,LAB,                                ,1,1416035
+24/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1416035
+24/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1416035
+24/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1416035
+24/12/2025,PERFIL BIOQUIMICO,Hospitalizado,03-02-075-00,LAB,                                ,1,1416035
+22/12/2025,RX TORAX  FRONTAL O LATERAL CON EQUIPO M,Hospitalizado,04-01-008-00,RAY,                                ,1,1085432
+22/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1415581
+22/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1415581
+22/12/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1415581
+22/12/2025,NITROGENO UREICO EN SANGRE,Hospitalizado,03-02-057-02,LAB,                                ,1,1415581
+22/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1415581
+22/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1415581
+22/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1415581
+22/12/2025,UREA EN SANGRE,Hospitalizado,03-02-057-03,LAB,                                ,1,1415581
+22/12/2025,AMONIO,Hospitalizado,03-02-010-00,LAB,                                ,1,1415581
+22/12/2025,PERFIL HEPATICO,Hospitalizado,03-02-076-00,LAB,                                ,1,1415581
+21/12/2025,ALBUMINA EN SANGRE,Hospitalizado,03-02-101-00,LAB,                                ,1,1415481
+21/12/2025,CALCIO EN SANGRE,Hospitalizado,03-02-015-00,LAB,                                ,1,1415481
+21/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1415481
+21/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1415481
+21/12/2025,FOSFORO EN SANGRE,Hospitalizado,03-02-042-00,LAB,                                ,1,1415481
+21/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1415481
+21/12/2025,MAGNESIO EN SANGRE,Hospitalizado,03-02-056-00,LAB,                                ,1,1415481
+21/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1415481
+21/12/2025,PROCALCITONINA,Hospitalizado,03-01-096-00,LAB,                                ,1,1415481
+21/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1415481
+21/12/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1415481
+20/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1415311
+20/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1415311
+20/12/2025,GASES EN SANGRE VENOSA,Hospitalizado,03-02-046-01,LAB,                                ,1,1415311
+20/12/2025,NITROGENO UREICO EN SANGRE,Hospitalizado,03-02-057-02,LAB,                                ,1,1415311
+20/12/2025,UREA EN SANGRE,Hospitalizado,03-02-057-03,LAB,                                ,1,1415311
+20/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1415311
+20/12/2025,RECUENTO HEMATOL�GICO,Hospitalizado,03-01-045-01,LAB,                                ,1,1415311
+20/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1415311
+20/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1415311
+19/12/2025,AMONIO,Hospitalizado,03-02-010-00,LAB,                                ,1,1415252
+19/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1415252
+19/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1415252
+19/12/2025,UREA EN SANGRE,Hospitalizado,03-02-057-03,LAB,                                ,1,1415252
+19/12/2025,PERFIL HEPATICO,Hospitalizado,03-02-076-00,LAB,                                ,1,1415252
+19/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1415252
+19/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1415252
+19/12/2025,NITROGENO UREICO EN SANGRE,Hospitalizado,03-02-057-02,LAB,                                ,1,1415252
+18/12/2025,RX TORAX  FRONTAL O LATERAL CON EQUIPO M,Hospitalizado,04-01-008-00,RAY,                                ,1,1084297
+17/12/2025,RECUENTO HEMATOL�GICO,Hospitalizado,03-01-045-01,LAB,                                ,1,1414660
+17/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1414660
+16/12/2025,RX TORAX  FRONTAL O LATERAL CON EQUIPO M,Hospitalizado,04-01-008-00,RAY,                                ,1,1083637
+16/12/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1414437
+16/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1414437
+16/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1414437
+16/12/2025,ALBUMINA EN SANGRE,Hospitalizado,03-02-101-00,LAB,                                ,1,1414437
+16/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1414437
+16/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1414437
+16/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1414437
+16/12/2025,GLUCOSA EN SANGRE,Hospitalizado,03-02-047-00,LAB,                                ,1,1414416
+16/12/2025,DESHIDROGENASA LACTICA TOTAL (LDH),Hospitalizado,03-02-030-00,LAB,                                ,1,1414416
+16/12/2025,COLESTEROL TOTAL,Hospitalizado,03-02-067-00,LAB,                                ,1,1414416
+16/12/2025,ALBUMINA EN SANGRE,Hospitalizado,03-02-101-00,LAB,                                ,1,1414416
+16/12/2025,PROTEINAS TOTALES EN SANGRE,Hospitalizado,03-02-100-00,LAB,                                ,1,1414416
+16/12/2025,CULTIVO CORRIENTE (AEROBICO),Hospitalizado,03-06-008-00,LAB,                                ,1,1414415
+16/12/2025,CITOLOGICO C/S TINCION LIQUIDO PLEURAL,Hospitalizado,03-08-010-02,LAB,                                ,1,1414415
+16/12/2025,TINCION DE GRAM,Hospitalizado,03-06-005-00,LAB,                                ,1,1414415
+15/12/2025,RX TORAX  FRONTAL O LATERAL CON EQUIPO M,Hospitalizado,04-01-008-00,RAY,                                ,1,1083380
+15/12/2025,CALCIO EN SANGRE,Hospitalizado,03-02-015-00,LAB,                                ,1,1414171
+15/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1414171
+15/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1414171
+15/12/2025,FOSFORO EN SANGRE,Hospitalizado,03-02-042-00,LAB,                                ,1,1414171
+15/12/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1414171
+15/12/2025,NITROGENO UREICO EN SANGRE,Hospitalizado,03-02-057-02,LAB,                                ,1,1414171
+15/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1414171
+15/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1414171
+15/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1414171
+15/12/2025,UREA EN SANGRE,Hospitalizado,03-02-057-03,LAB,                                ,1,1414171
+15/12/2025,ALBUMINA EN SANGRE,Hospitalizado,03-02-101-00,LAB,                                ,1,1414171
+15/12/2025,MAGNESIO EN SANGRE,Hospitalizado,03-02-056-00,LAB,                                ,1,1414171
+14/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1414068
+14/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1414068
+14/12/2025,NITROGENO UREICO EN SANGRE,Hospitalizado,03-02-057-02,LAB,                                ,1,1414068
+14/12/2025,UREA EN SANGRE,Hospitalizado,03-02-057-03,LAB,                                ,1,1414068
+14/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1414068
+14/12/2025,RECUENTO HEMATOL�GICO,Hospitalizado,03-01-045-01,LAB,                                ,1,1414068
+14/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1414068
+14/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1414068
+13/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1413889
+13/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1413889
+13/12/2025,NITROGENO UREICO EN SANGRE,Hospitalizado,03-02-057-02,LAB,                                ,1,1413889
+13/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1413889
+13/12/2025,PROCALCITONINA,Hospitalizado,03-01-096-00,LAB,                                ,1,1413889
+13/12/2025,UREA EN SANGRE,Hospitalizado,03-02-057-03,LAB,                                ,1,1413889
+13/12/2025,RECUENTO HEMATOL�GICO,Hospitalizado,03-01-045-01,LAB,                                ,1,1413889
+13/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1413889
+13/12/2025,TIEMPO DE PROTROMBINA INCLUYE INR,Hospitalizado,03-01-059-00,LAB,                                ,1,1413889
+13/12/2025,TIEMPO TROMBOPLASTINA PARCIAL ACTIVADO,Hospitalizado,03-01-085-00,LAB,                                ,1,1413889
+13/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1413889
+12/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1413827
+12/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1413827
+12/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1413827
+12/12/2025,CLASIFICACION PACIENTE EN SALA,Hospitalizado,03-01-034-01,LAB,                                ,1,1413826
+12/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1413649
+12/12/2025,RECUENTO HEMATOL�GICO,Hospitalizado,03-01-045-01,LAB,                                ,1,1413649
+11/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1413389
+11/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1413389
+11/12/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1413389
+11/12/2025,NITROGENO UREICO EN SANGRE,Hospitalizado,03-02-057-02,LAB,                                ,1,1413389
+11/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1413389
+11/12/2025,UREA EN SANGRE,Hospitalizado,03-02-057-03,LAB,                                ,1,1413389
+11/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1413389
+11/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1413389
+11/12/2025,TIEMPO DE PROTROMBINA INCLUYE INR,Hospitalizado,03-01-059-00,LAB,                                ,1,1413389
+11/12/2025,TIEMPO TROMBOPLASTINA PARCIAL ACTIVADO,Hospitalizado,03-01-085-00,LAB,                                ,1,1413389
+11/12/2025,PROCALCITONINA,Hospitalizado,03-01-096-00,LAB,                                ,1,1413389
+10/12/2025,ALBUMINA EN SANGRE,Hospitalizado,03-02-101-00,LAB,                                ,1,1413149
+10/12/2025,CALCIO EN SANGRE,Hospitalizado,03-02-015-00,LAB,                                ,1,1413149
+10/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1413149
+10/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1413149
+10/12/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1413149
+10/12/2025,UREA EN SANGRE,Hospitalizado,03-02-057-03,LAB,                                ,1,1413149
+10/12/2025,NITROGENO UREICO EN SANGRE,Hospitalizado,03-02-057-02,LAB,                                ,1,1413149
+10/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1413149
+10/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1413149
+10/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1413149
+10/12/2025,MAGNESIO EN SANGRE,Hospitalizado,03-02-056-00,LAB,                                ,1,1413149
+09/12/2025,ALBUMINA EN SANGRE,Hospitalizado,03-02-101-00,LAB,                                ,1,1412884
+09/12/2025,CALCIO EN SANGRE,Hospitalizado,03-02-015-00,LAB,                                ,1,1412884
+09/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1412884
+09/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1412884
+09/12/2025,FOSFORO EN SANGRE,Hospitalizado,03-02-042-00,LAB,                                ,1,1412884
+09/12/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1412884
+09/12/2025,MAGNESIO EN SANGRE,Hospitalizado,03-02-056-00,LAB,                                ,1,1412884
+09/12/2025,NITROGENO UREICO EN SANGRE,Hospitalizado,03-02-057-02,LAB,                                ,1,1412884
+09/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1412884
+09/12/2025,PROCALCITONINA,Hospitalizado,03-01-096-00,LAB,                                ,1,1412884
+09/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1412884
+09/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1412884
+09/12/2025,TIEMPO DE PROTROMBINA INCLUYE INR,Hospitalizado,03-01-059-00,LAB,                                ,1,1412884
+09/12/2025,UREA EN SANGRE,Hospitalizado,03-02-057-03,LAB,                                ,1,1412884
+08/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1412784
+08/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1412784
+08/12/2025,NITROGENO UREICO EN SANGRE,Hospitalizado,03-02-057-02,LAB,                                ,1,1412784
+08/12/2025,UREA EN SANGRE,Hospitalizado,03-02-057-03,LAB,                                ,1,1412784
+08/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1412784
+08/12/2025,RECUENTO HEMATOL�GICO,Hospitalizado,03-01-045-01,LAB,                                ,1,1412784
+08/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1412784
+08/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1412784
+07/12/2025,PROCALCITONINA,Hospitalizado,03-01-096-00,LAB,                                ,1,1412678
+07/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1412678
+07/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1412678
+07/12/2025,TIEMPO DE PROTROMBINA INCLUYE INR,Hospitalizado,03-01-059-00,LAB,                                ,1,1412678
+07/12/2025,TIEMPO TROMBOPLASTINA PARCIAL ACTIVADO,Hospitalizado,03-01-085-00,LAB,                                ,1,1412678
+07/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1412678
+07/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1412678
+07/12/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1412678
+07/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1412678
+06/12/2025,PERFIL HEPATICO,Hospitalizado,03-02-076-00,LAB,                                ,1,1412482
+06/12/2025,TIEMPO TROMBOPLASTINA PARCIAL ACTIVADO,Hospitalizado,03-01-085-00,LAB,                                ,1,1412482
+06/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1412482
+06/12/2025,TIEMPO DE PROTROMBINA INCLUYE INR,Hospitalizado,03-01-059-00,LAB,                                ,1,1412482
+06/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1412482
+06/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1412482
+06/12/2025,RECUENTO HEMATOL�GICO,Hospitalizado,03-01-045-01,LAB,                                ,1,1412482
+06/12/2025,FOSFORO EN SANGRE,Hospitalizado,03-02-042-00,LAB,                                ,1,1412482
+06/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1412482
+06/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1412482
+06/12/2025,CALCIO EN SANGRE,Hospitalizado,03-02-015-00,LAB,                                ,1,1412482
+06/12/2025,ALBUMINA EN SANGRE,Hospitalizado,03-02-101-00,LAB,                                ,1,1412482
+06/12/2025,ACIDO LACTICO VENOSO,Hospitalizado,03-02-004-00,LAB,                                ,1,1412482
+06/12/2025,MAGNESIO EN SANGRE,Hospitalizado,03-02-056-00,LAB,                                ,1,1412482
+05/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1412273
+05/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1412273
+05/12/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1412273
+05/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1412273
+05/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1412273
+05/12/2025,TIEMPO TROMBOPLASTINA PARCIAL ACTIVADO,Hospitalizado,03-01-085-00,LAB,                                ,1,1412273
+05/12/2025,TIEMPO DE PROTROMBINA INCLUYE INR,Hospitalizado,03-01-059-00,LAB,                                ,1,1412273
+04/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1412014
+04/12/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1412014
+04/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1412014
+04/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1412014
+04/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1412014
+03/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1411876
+03/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1411876
+03/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1411876
+03/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1411760
+03/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1411760
+03/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1411760
+03/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1411760
+03/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1411760
+03/12/2025,RECUENTO HEMATOL�GICO,Hospitalizado,03-01-045-01,LAB,                                ,1,1411760
+02/12/2025,CALIFICACION MICROBIOLOGICA DONANTES,Hospitalizado,07-02-201-00,LAB,                                ,1,1411694
+02/12/2025,DETEC DE AC IRREGULARES ERITROCITARIOS,Hospitalizado,07-02-207-00,LAB,                                ,1,1411694
+02/12/2025,PRODUCCION DE GLOBULO ROJO,Hospitalizado,07-02-101-00,LAB,                                ,1,1411694
+02/12/2025,PRUEBA COMPATIBILIDAD POR UNIDAD DE GR,Hospitalizado,07-02-203-00,LAB,                                ,1,1411694
+02/12/2025,TRANSFUSION EN ADULTO POR UNIDAD O SUB,Hospitalizado,07-02-301-00,LAB,                                ,1,1411694
+02/12/2025,SANGRIA (CONSIDERA EL COBRO DE UNA PRES,Hospitalizado,07-02-304-00,LAB,                                ,1,1411694
+02/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1411490
+02/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1411490
+02/12/2025,GLUCOSA EN SANGRE,Hospitalizado,03-02-047-00,LAB,                                ,1,1411490
+02/12/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1411490
+02/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1411490
+02/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1411490
+01/12/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1411459
+01/12/2025,RECUENTO HEMATOL�GICO,Hospitalizado,03-01-045-01,LAB,                                ,1,1411421
+01/12/2025,PRUEBA COMPATIBILIDAD POR UNIDAD DE GR,Hospitalizado,07-02-203-00,LAB,                                ,1,1411412
+01/12/2025,DETEC DE AC IRREGULARES ERITROCITARIOS,Hospitalizado,07-02-207-00,LAB,                                ,1,1411412
+01/12/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1411242
+01/12/2025,PROCALCITONINA,Hospitalizado,03-01-096-00,LAB,                                ,1,1411242
+01/12/2025,NITROGENO UREICO EN SANGRE,Hospitalizado,03-02-057-02,LAB,                                ,1,1411242
+01/12/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1411242
+01/12/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1411242
+01/12/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1411242
+01/12/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1411242
+01/12/2025,UREA EN SANGRE,Hospitalizado,03-02-057-03,LAB,                                ,1,1411242
+01/12/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1411242
+30/11/2025,UREA EN SANGRE,Hospitalizado,03-02-057-03,LAB,                                ,1,1411216
+30/11/2025,ACIDO LACTICO VENOSO,Hospitalizado,03-02-004-00,LAB,                                ,1,1411216
+30/11/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1411216
+30/11/2025,NITROGENO UREICO EN SANGRE,Hospitalizado,03-02-057-02,LAB,                                ,1,1411216
+30/11/2025,RECUENTO HEMATOL�GICO,Hospitalizado,03-01-045-01,LAB,                                ,1,1411216
+30/11/2025,DETEC DE AC IRREGULARES ERITROCITARIOS,Hospitalizado,07-02-207-00,LAB,                                ,1,1411193
+30/11/2025,PRUEBA COMPATIBILIDAD POR UNIDAD DE GR,Hospitalizado,07-02-203-00,LAB,                                ,1,1411193
+30/11/2025,GASES EN SANGRE VENOSA,Hospitalizado,03-02-046-01,LAB,                                ,1,1411125
+30/11/2025,FOSFORO EN SANGRE,Hospitalizado,03-02-042-00,LAB,                                ,1,1411125
+30/11/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1411125
+30/11/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1411125
+30/11/2025,CALCIO EN SANGRE,Hospitalizado,03-02-015-00,LAB,                                ,1,1411125
+30/11/2025,ALBUMINA EN SANGRE,Hospitalizado,03-02-101-00,LAB,                                ,1,1411125
+30/11/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1411125
+30/11/2025,PROCALCITONINA,Hospitalizado,03-01-096-00,LAB,                                ,1,1411125
+30/11/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1411125
+30/11/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1411125
+30/11/2025,TIEMPO DE PROTROMBINA INCLUYE INR,Hospitalizado,03-01-059-00,LAB,                                ,1,1411125
+30/11/2025,TIEMPO TROMBOPLASTINA PARCIAL ACTIVADO,Hospitalizado,03-01-085-00,LAB,                                ,1,1411125
+30/11/2025,UREA EN SANGRE,Hospitalizado,03-02-057-03,LAB,                                ,1,1411125
+30/11/2025,RECUENTO HEMATOL�GICO,Hospitalizado,03-01-045-01,LAB,                                ,1,1411125
+29/11/2025,CALIFICACION MICROBIOLOGICA DONANTES,Hospitalizado,07-02-201-00,LAB,                                ,1,1410949
+29/11/2025,CALIFICACION MICROBIOLOGICA DONANTES,Hospitalizado,07-02-201-00,LAB,                                ,1,1410948
+29/11/2025,SANGRIA (CONSIDERA EL COBRO DE UNA PRES,Hospitalizado,07-02-304-00,LAB,                                ,1,1410948
+29/11/2025,PRODUCCION DE GLOBULO ROJO,Hospitalizado,07-02-101-00,LAB,                                ,1,1410948
+29/11/2025,CLASIFICACION PACIENTE EN SALA,Hospitalizado,03-01-034-01,LAB,                                ,1,1410948
+29/11/2025,HEMOGRAMA Y VHS,Hospitalizado,03-01-045-00,LAB,                                ,1,1410894
+29/11/2025,MAGNESIO EN SANGRE,Hospitalizado,03-02-056-00,LAB,                                ,1,1410894
+29/11/2025,POTASIO PLASMATICO,Hospitalizado,03-02-032-01,LAB,                                ,1,1410894
+29/11/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1410894
+29/11/2025,SODIO PLASMATICO,Hospitalizado,03-02-032-00,LAB,                                ,1,1410894
+29/11/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1410894
+29/11/2025,CLORO PLASMATICO,Hospitalizado,03-02-032-02,LAB,                                ,1,1410894
+29/11/2025,ACIDO LACTICO VENOSO,Hospitalizado,03-02-004-00,LAB,                                ,1,1410894
+29/11/2025,PROCALCITONINA,Hospitalizado,03-01-096-00,LAB,                                ,1,1410894
+28/11/2025,CLASIFICACION PACIENTE EN SALA,Hospitalizado,03-01-034-01,LAB,                                ,1,1410830
+28/11/2025,CALIFICACION MICROBIOLOGICA DONANTES,Hospitalizado,07-02-201-00,LAB,                                ,1,1410826
+28/11/2025,DETEC DE AC IRREGULARES ERITROCITARIOS,Hospitalizado,07-02-207-00,LAB,                                ,1,1410826
+28/11/2025,PRODUCCION DE GLOBULO ROJO,Hospitalizado,07-02-101-00,LAB,                                ,1,1410826
+28/11/2025,SANGRIA (CONSIDERA EL COBRO DE UNA PRES,Hospitalizado,07-02-304-00,LAB,                                ,1,1410826
+28/11/2025,TRANSFUSION EN ADULTO POR UNIDAD O SUB,Hospitalizado,07-02-301-00,LAB,                                ,1,1410826
+28/11/2025,PRUEBA COMPATIBILIDAD POR UNIDAD DE GR,Hospitalizado,07-02-203-00,LAB,                                ,1,1410826
+27/11/2025,DETEC DE AC IRREGULARES ERITROCITARIOS,Hospitalizado,07-02-207-00,LAB,                                ,1,1410658
+27/11/2025,PRUEBA COMPATIBILIDAD POR UNIDAD DE GR,Hospitalizado,07-02-203-00,LAB,                                ,1,1410658
+27/11/2025,TIEMPO TROMBOPLASTINA PARCIAL ACTIVADO,Hospitalizado,03-01-085-00,LAB,                                ,1,1410638
+27/11/2025,RECUENTO HEMATOL�GICO,Hospitalizado,03-01-045-01,LAB,                                ,1,1410638
+27/11/2025,PROTEINA C REACTIVA,Hospitalizado,03-05-031-00,LAB,                                ,1,1410638
+27/11/2025,PERFIL HEPATICO,Hospitalizado,03-02-076-00,LAB,                                ,1,1410638
+27/11/2025,CREATININA EN SANGRE,Hospitalizado,03-02-023-00,LAB,                                ,1,1410638
+27/11/2025,PERFIL BIOQUIMICO,Hospitalizado,03-02-075-00,LAB,                                ,1,1410638
