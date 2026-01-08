@@ -523,7 +523,9 @@ export class LocalRAGService {
       let labsText = `[TIPO] Laboratorios\n\n`;
       labsText += `Laboratorios resumen:\n`;
       clinicalData.laboratorios_relevantes.forEach(lab => {
-        labsText += `- ${lab.parametro}: ${lab.valor} (${lab.fecha})\n`;
+        // Limpiar valor de laboratorio (eliminar unidades duplicadas)
+        const cleanedValue = this.cleanLabValue(lab.valor);
+        labsText += `- ${lab.parametro}: ${cleanedValue} (${lab.fecha})\n`;
       });
 
       chunks.push({
@@ -902,6 +904,179 @@ export class LocalRAGService {
   }
 
   /**
+   * Deduplica medicamentos por código ATC
+   * Detecta y elimina medicamentos duplicados en la lista
+   */
+  private deduplicateMedicamentos(medicamentos: string[]): { unique: string[], duplicates: string[] } {
+    const seen = new Map<string, string>();
+    const duplicates: string[] = [];
+
+    for (const med of medicamentos) {
+      // Extraer código ATC del medicamento
+      const match = med.match(/\(([A-Z]\d+[A-Z]?\d*)\)/i);
+      const codigo = match ? match[1].toUpperCase() : med.toLowerCase();
+
+      if (seen.has(codigo)) {
+        duplicates.push(med);
+      } else {
+        seen.set(codigo, med);
+      }
+    }
+
+    return {
+      unique: Array.from(seen.values()),
+      duplicates
+    };
+  }
+
+  /**
+   * Limpia formato de valores de laboratorio
+   * Corrige unidades duplicadas como "7.8 g/dL g/dL" -> "7.8 g/dL"
+   */
+  private cleanLabValue(value: string): string {
+    // Patrón para detectar unidades duplicadas
+    // Ejemplo: "7.8 g/dL g/dL" -> "7.8 g/dL"
+    const duplicateUnitPattern = /^([\d.,]+\s*)([a-zA-Z%\/\^]+(?:\d+)?(?:\/[a-zA-Z]+)?)\s+\2$/;
+    const match = value.match(duplicateUnitPattern);
+    if (match) {
+      return `${match[1]}${match[2]}`;
+    }
+
+    // Patrón alternativo: "23.7% %" -> "23.7%"
+    const percentDuplicatePattern = /^([\d.,]+%)\s+%$/;
+    const percentMatch = value.match(percentDuplicatePattern);
+    if (percentMatch) {
+      return percentMatch[1];
+    }
+
+    return value.trim();
+  }
+
+  /**
+   * Valida datos de entrada antes de generar epicrisis
+   * Detecta campos vacíos y problemas de calidad
+   */
+  validateInputData(chunks: Chunk[]): {
+    isValid: boolean;
+    missingFields: string[];
+    warnings: ValidationWarning[];
+    duplicates: { medicamentos: string[] };
+  } {
+    const missingFields: string[] = [];
+    const warnings: ValidationWarning[] = [];
+
+    // Extraer datos
+    const motivo = this.extractMotivoIngreso(chunks);
+    const diagnosticos = this.extractDiagnosticos(chunks);
+    const procedimientos = this.extractProcedimientos(chunks);
+    const tratamientos = this.extractTratamientosIntrahosp(chunks);
+    const medicamentos = this.extractMedicamentosAlta(chunks);
+    const altaInfo = this.extractControlesYRecomendaciones(chunks);
+    const hospitalizacion = this.calcularDiasHospitalizacion(chunks);
+
+    // Validar campos obligatorios
+    if (motivo === 'No consignado') {
+      missingFields.push('motivo_ingreso');
+      warnings.push({
+        type: 'invented_section',
+        message: 'Motivo de ingreso no consignado',
+        severity: 'medium'
+      });
+    }
+
+    if (diagnosticos.ingreso.length === 0) {
+      missingFields.push('diagnostico_ingreso');
+      warnings.push({
+        type: 'invented_section',
+        message: 'Diagnóstico de ingreso no consignado',
+        severity: 'medium'
+      });
+    }
+
+    if (diagnosticos.egreso.length === 0) {
+      missingFields.push('diagnostico_egreso');
+      warnings.push({
+        type: 'invented_section',
+        message: 'Diagnóstico de egreso no consignado',
+        severity: 'medium'
+      });
+    }
+
+    // Validar campos opcionales pero importantes
+    if (procedimientos.length === 0) {
+      warnings.push({
+        type: 'invented_section',
+        message: 'Sin procedimientos consignados - se usará frase estándar',
+        severity: 'low'
+      });
+    }
+
+    if (tratamientos.length === 0) {
+      warnings.push({
+        type: 'invented_section',
+        message: 'Sin tratamientos intrahospitalarios consignados - se usará frase estándar',
+        severity: 'low'
+      });
+    }
+
+    if (medicamentos.length === 0) {
+      missingFields.push('medicamentos_alta');
+      warnings.push({
+        type: 'invented_section',
+        message: 'Sin medicamentos al alta',
+        severity: 'medium'
+      });
+    }
+
+    // Validar controles y recomendaciones vacíos
+    if (altaInfo.controles.length === 0) {
+      missingFields.push('controles');
+      warnings.push({
+        type: 'invented_section',
+        message: 'Controles ambulatorios no consignados',
+        severity: 'medium'
+      });
+    }
+
+    if (altaInfo.recomendaciones.length === 0) {
+      missingFields.push('recomendaciones');
+      warnings.push({
+        type: 'invented_section',
+        message: 'Recomendaciones al alta no consignadas',
+        severity: 'medium'
+      });
+    }
+
+    // Validar hospitalización
+    if (!hospitalizacion) {
+      warnings.push({
+        type: 'invented_number',
+        message: 'No se pudo calcular días de hospitalización',
+        severity: 'low'
+      });
+    }
+
+    // Detectar medicamentos duplicados
+    const medDuplicates = this.deduplicateMedicamentos(medicamentos);
+    if (medDuplicates.duplicates.length > 0) {
+      warnings.push({
+        type: 'invented_section',
+        message: `Medicamentos duplicados detectados: ${medDuplicates.duplicates.join(', ')}`,
+        severity: 'low'
+      });
+    }
+
+    return {
+      isValid: missingFields.filter(f =>
+        ['diagnostico_ingreso', 'diagnostico_egreso'].includes(f)
+      ).length === 0,
+      missingFields,
+      warnings,
+      duplicates: { medicamentos: medDuplicates.duplicates }
+    };
+  }
+
+  /**
    * Calcula días de hospitalización desde las fechas de evolución
    */
   private calcularDiasHospitalizacion(chunks: Chunk[]): { dias: number, fechaIngreso: string, fechaAlta: string } | null {
@@ -1025,19 +1200,32 @@ export class LocalRAGService {
 
     // Indicaciones al alta - ENFATIZAR CÓDIGOS ATC
     prompt += `\n*** INDICACIONES AL ALTA: ***\n`;
-    if (medicamentosAlta.length > 0) {
+
+    // Deduplicar medicamentos antes de incluir en prompt
+    const medDedupe = this.deduplicateMedicamentos(medicamentosAlta);
+    const medicamentosUnicos = medDedupe.unique;
+
+    if (medicamentosUnicos.length > 0) {
       prompt += `MEDICAMENTOS (OBLIGATORIO incluir código ATC entre paréntesis para cada uno):\n`;
-      medicamentosAlta.forEach(med => {
+      medicamentosUnicos.forEach(med => {
         prompt += `  • ${med}\n`;
       });
     } else {
       prompt += `MEDICAMENTOS: Sin medicamentos al alta\n`;
     }
+
+    // Controles - usar frase estándar si vacío
     if (altaInfo.controles.length > 0) {
       prompt += `CONTROLES: ${altaInfo.controles.join('; ')}\n`;
+    } else {
+      prompt += `CONTROLES: "No consignado" (usar esta frase exacta)\n`;
     }
+
+    // Recomendaciones - usar frase estándar si vacío
     if (altaInfo.recomendaciones.length > 0) {
       prompt += `RECOMENDACIONES: ${altaInfo.recomendaciones.join('; ')}\n`;
+    } else {
+      prompt += `RECOMENDACIONES: "No consignadas" (usar esta frase exacta)\n`;
     }
 
     prompt += '\n=== FIN DATOS ===\n\n';
@@ -1435,6 +1623,16 @@ export class LocalRAGService {
       return (order[a.chunkType] || 99) - (order[b.chunkType] || 99);
     });
 
+    // 3.5. Validar datos de entrada
+    const inputValidation = this.validateInputData(sortedChunks);
+    if (inputValidation.warnings.length > 0) {
+      console.log('[LocalRAG] Validación de entrada:', {
+        missingFields: inputValidation.missingFields,
+        warnings: inputValidation.warnings.map(w => w.message),
+        duplicates: inputValidation.duplicates
+      });
+    }
+
     // 4. Construir prompt
     const prompt = this.buildEpicrisisPrompt(sortedChunks);
 
@@ -1442,7 +1640,21 @@ export class LocalRAGService {
     const text = await this.generateText(prompt, GENERATION_CONFIGS['resumen_alta']);
 
     // 6. Validar output
-    const validation = this.validateOutput(text, sortedChunks);
+    const outputValidation = this.validateOutput(text, sortedChunks);
+
+    // 7. Combinar warnings de entrada y salida
+    const allWarnings = [
+      ...inputValidation.warnings.filter(w => w.severity !== 'low'),
+      ...outputValidation.warnings
+    ];
+
+    const combinedValidation: LocalValidationResult = {
+      ok: outputValidation.ok && inputValidation.isValid,
+      warnings: allWarnings,
+      summary: allWarnings.length === 0
+        ? 'Validación correcta'
+        : `${allWarnings.length} advertencia(s) encontrada(s)`
+    };
 
     const processingTimeMs = Date.now() - startTime;
     const tokensGenerated = text.split(/\s+/).length;
@@ -1450,7 +1662,7 @@ export class LocalRAGService {
 
     return {
       text,
-      validation,
+      validation: combinedValidation,
       processingTimeMs,
       tokensGenerated,
       tokensPerSecond
