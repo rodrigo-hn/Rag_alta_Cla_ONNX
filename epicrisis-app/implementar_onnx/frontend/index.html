@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Local Chat - RAG en el Navegador (ONNX)</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Local Chat - RAG</h1>
+        <p class="subtitle">LLM ONNX + Embeddings 100% en el navegador</p>
+        <div id="isolation-status" class="status-box">
+          <span id="isolation-text">Verificando crossOriginIsolated...</span>
+          <span id="webgpu-text" style="margin-left: 15px;">WebGPU: verificando...</span>
+        </div>
+      </header>
+
+      <main>
+        <!-- Sección 1: Cargar Modelo LLM -->
+        <section class="card">
+          <h2>1. Cargar Modelo LLM (ONNX)</h2>
+          <div class="model-selector-group">
+            <label for="model-select" class="model-label"
+              >Seleccionar Modelo:</label
+            >
+            <select id="model-select" class="model-select">
+              <option value="onnx-community/Llama-3.2-1B-Instruct">
+                Llama 3.2 1B Instruct Q4F16 (~1.1GB - Rápido)
+              </option>
+              <option value="onnx-community/Llama-3.2-1B-Instruct-ONNX">
+                Llama 3.2 1B Instruct FP16 (~2.5GB - Mayor Precisión)
+              </option>
+              <option value="onnx-community/Llama-3.2-3B-Instruct-onnx-web" disabled>
+                Llama 3.2 3B Instruct (~2.5GB - NO FUNCIONAL .onnx_data)
+              </option>
+              <option value="onnx-community/Falcon3-1B-Instruct" disabled>
+                Falcon3 1B Instruct (~1.3GB - INESTABLE)
+              </option>
+              <option value="onnx-community/Phi-3.5-mini-instruct-onnx-web">
+                Phi 3.5 Mini Instruct (~2.2GB - Microsoft)
+              </option>
+              <option value="mistralai/Ministral-3-3B-Instruct-2512-ONNX">
+                Ministral 3 3B Instruct ONNX (~2.4GB - Mejor calidad)
+              </option>
+              <option value="onnx-community/granite-3.0-2b-instruct">
+                Granite 3.0 2B Instruct (~1.6GB - IBM)
+              </option>
+              <option value="onnx-community/TinySwallow-1.5B-Instruct-ONNX" disabled>
+                TinySwallow 1.5B Instruct (~1.2GB - INESTABLE)
+              </option>
+              <option value="HuggingFaceTB/SmolLM2-360M-Instruct">
+                SmolLM2 360M Instruct (~200MB - Experimental)
+              </option>
+              <option value="onnx-community/Qwen2.5-0.5B-Instruct-ONNX-GQA" disabled>
+                Qwen 2.5 0.5B GQA (~474MB - INESTABLE)
+              </option>
+              <option value="onnx-community/Qwen2.5-0.5B-Instruct" disabled>
+                Qwen 2.5 0.5B Instruct (~480MB - INESTABLE)
+              </option>
+              <option value="onnx-community/Qwen2.5-1.5B-Instruct" disabled>
+                Qwen 2.5 1.5B Instruct (~1.7GB - NO FUNCIONAL)
+              </option>
+              <option value="onnx-community/Phi-4-mini-instruct-web-q4f16" disabled>
+                Phi-4 Mini Instruct Q4F16 (~3.2GB - NO FUNCIONAL)
+              </option>
+              <option value="onnx-community/LFM2-VL-1.6B-ONNX" disabled>
+                LFM2-VL 1.6B Vision-Language (~3.2GB - NO SOPORTADO)
+              </option>
+              <option value="nvidia/Meta-Llama-3.2-3B-Instruct-ONNX-INT4" disabled>
+                NVIDIA Llama 3.2 3B INT4 (~3GB - NO SOPORTADO DirectML)
+              </option>
+              <option value="onnx-community/gemma-3-1b-it-ONNX-GQA" disabled>
+                Gemma 3 1B Instruct (~1.7GB - NO FUNCIONAL Browser)
+              </option>
+            </select>
+          </div>
+          <p class="model-info">
+            Los modelos se descargan desde HuggingFace y se cachean en el navegador.
+            WebGPU proporciona aceleración por GPU cuando está disponible.
+          </p>
+          <button id="load-model-btn" class="btn btn-primary">
+            Cargar Modelo LLM
+          </button>
+          <div id="model-status" class="status-text"></div>
+        </section>
+
+        <!-- Sección 2: Subir e Indexar Documento -->
+        <section class="card">
+          <h2>2. Subir e Indexar Documento</h2>
+          <div class="file-input-group">
+            <label for="file-input" class="file-label"
+              >Seleccionar Epicrisis JSON:</label
+            >
+            <input type="file" id="file-input" accept=".json" />
+          </div>
+          <button id="index-btn" class="btn btn-secondary" disabled>
+            Indexar
+          </button>
+          <div id="index-status" class="status-text"></div>
+        </section>
+
+        <!-- Sección 3: Hacer Preguntas -->
+        <section class="card">
+          <h2>3. Hacer Preguntas</h2>
+          <div class="question-group">
+            <label for="question-input">Pregunta:</label>
+            <input
+              type="text"
+              id="question-input"
+              placeholder="Ej: ¿Cuál fue el motivo de ingreso?"
+            />
+          </div>
+          <button id="ask-btn" class="btn btn-primary" disabled>
+            Preguntar
+          </button>
+          <div id="answer-status" class="status-text"></div>
+
+          <div id="answer-section" class="answer-box" style="display: none">
+            <h3>Respuesta:</h3>
+            <div id="answer-text" class="answer-content"></div>
+          </div>
+
+          <div id="sources-section" class="sources-box" style="display: none">
+            <h3>Fuentes:</h3>
+            <ul id="sources-list"></ul>
+          </div>
+        </section>
+
+        <!-- Sección 4: Consultas Simples (Pruebas) -->
+        <section class="card">
+          <h2>4. Consultas Simples (Pruebas)</h2>
+          <p class="simple-query-info">
+            Envía un prompt directo al modelo sin formato específico de salida.
+            Útil para probar la capacidad del modelo y depurar respuestas.
+          </p>
+          <div class="question-group">
+            <label for="simple-query-input">Prompt:</label>
+            <textarea
+              id="simple-query-input"
+              rows="4"
+              placeholder="Ej: ¿Cuál es la capital de Francia? / Explica qué es WebGPU en 2 oraciones."
+            ></textarea>
+          </div>
+          <button id="simple-query-btn" class="btn btn-secondary" disabled>
+            Enviar Consulta
+          </button>
+          <div id="simple-query-status" class="status-text"></div>
+
+          <div id="simple-query-section" class="answer-box" style="display: none">
+            <h3>Respuesta del Modelo:</h3>
+            <textarea id="simple-query-output" class="resumen-output" readonly rows="10"></textarea>
+            <div class="simple-query-metrics" id="simple-query-metrics"></div>
+          </div>
+        </section>
+
+        <!-- Sección 5: Resumen de Alta (Epicrisis) -->
+        <section class="card">
+          <h2>5. Generar Resumen de Alta (Epicrisis)</h2>
+          <p class="resumen-info">
+            Genera un resumen de alta completo en estilo narrativo médico clásico.
+            Utiliza todos los chunks indexados para crear un informe de epicrisis estructurado.
+          </p>
+          <button id="generate-resumen-btn" class="btn btn-accent" disabled>
+            Generar Resumen de Alta
+          </button>
+          <div id="resumen-status" class="status-text"></div>
+
+          <div id="resumen-section" class="resumen-box" style="display: none">
+            <h3>Resumen de Alta (Epicrisis):</h3>
+            <textarea id="resumen-output" class="resumen-output" readonly rows="20"></textarea>
+            <button id="copy-resumen-btn" class="btn btn-secondary btn-small" onclick="navigator.clipboard.writeText(document.getElementById('resumen-output').value).then(() => alert('Copiado al portapapeles'))">
+              Copiar al Portapapeles
+            </button>
+          </div>
+        </section>
+
+        <!-- Sección 6: Utilidades -->
+        <section class="card">
+          <h2>6. Utilidades</h2>
+          <button id="clear-db-btn" class="btn btn-danger">
+            Limpiar Base de Datos
+          </button>
+          <div id="clear-status" class="status-text"></div>
+        </section>
+      </main>
+
+      <footer>
+        <p>Powered by Transformers.js (ONNX) + WebGPU</p>
+      </footer>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

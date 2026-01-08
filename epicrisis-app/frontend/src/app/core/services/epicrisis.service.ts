@@ -1,10 +1,13 @@
 /**
  * Servicio principal de Epicrisis
  * Gestiona el estado y las operaciones de la aplicación
+ * Soporta generacion remota (backend) y local (ONNX en navegador)
  */
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { Observable, tap, finalize } from 'rxjs';
+import { Observable, tap, finalize, switchMap } from 'rxjs';
 import { ApiService } from './api.service';
+import { GenerationModeService } from './generation-mode.service';
+import { LocalRAGService } from './local-rag.service';
 import {
   ClinicalJson,
   EpicrisisResponse,
@@ -18,6 +21,8 @@ import {
 })
 export class EpicrisisService {
   private api = inject(ApiService);
+  private modeService = inject(GenerationModeService);
+  private localRAG = inject(LocalRAGService);
 
   // Signals para estado reactivo
   clinicalData = signal<ClinicalJson | null>(null);
@@ -33,6 +38,12 @@ export class EpicrisisService {
   hasEpicrisis = computed(() => this.epicrisisText().length > 0);
   isValid = computed(() => this.validationResult()?.ok ?? false);
   violationsCount = computed(() => this.validationResult()?.violations.length ?? 0);
+
+  // Proxies al servicio de modo
+  generationMode = this.modeService.currentMode;
+  isLocalMode = this.modeService.isLocalMode;
+  lastGenerationTimeMs = this.modeService.lastGenerationTimeMs;
+  lastTokensPerSecond = this.modeService.lastTokensPerSecond;
 
   /**
    * Obtiene datos clínicos de un episodio
@@ -66,27 +77,31 @@ export class EpicrisisService {
 
   /**
    * Genera epicrisis a partir de los datos clínicos actuales
+   * Usa el modo configurado (remoto o local)
    */
   generateEpicrisis(): Observable<EpicrisisResponse> {
     const data = this.clinicalData();
+    const episode = this.episodeId();
+
     if (!data) {
       throw new Error('No hay datos clínicos cargados');
     }
 
+    const mode = this.modeService.currentMode();
+
     // ========================================
     // DEBUG: Imprimir clinicalData antes de enviar al LLM
     // ========================================
-    console.group('%c[EpicrisisService] Generando epicrisis con LLM', 'color: #E91E63; font-weight: bold;');
-    console.log('%cclinicalData enviado al backend:', 'color: #FF9800; font-weight: bold;');
+    console.group(`%c[EpicrisisService] Generando epicrisis [${mode.toUpperCase()}]`, 'color: #E91E63; font-weight: bold;');
+    console.log('%cModo:', 'color: #2196F3; font-weight: bold;', mode);
+    console.log('%cclinicalData:', 'color: #FF9800; font-weight: bold;');
     console.log(data);
-    console.log('%cRequest body:', 'color: #9C27B0; font-weight: bold;');
-    console.log(JSON.stringify({ clinicalData: data }, null, 2));
     console.groupEnd();
 
     this.isLoading.set(true);
     this.errorMessage.set('');
 
-    return this.api.post<EpicrisisResponse>('/generate-epicrisis', { clinicalData: data }).pipe(
+    return this.modeService.generateEpicrisis(data, episode).pipe(
       tap((response) => {
         this.epicrisisText.set(response.text);
         this.validationResult.set(response.validation);
@@ -95,12 +110,14 @@ export class EpicrisisService {
         // DEBUG: Imprimir respuesta del LLM
         // ========================================
         console.group('%c[EpicrisisService] Respuesta del LLM recibida', 'color: #4CAF50; font-weight: bold;');
+        console.log('%cModo:', 'color: #2196F3; font-weight: bold;', mode);
         console.log('%cTexto generado:', 'color: #2196F3; font-weight: bold;');
         console.log(response.text);
         console.log('%cValidacion:', 'color: #FF9800; font-weight: bold;', response.validation);
         console.log('%cTiempo de procesamiento:', 'color: #9C27B0; font-weight: bold;', response.processingTimeMs + 'ms');
-        console.log('%cRespuesta completa:', 'color: #607D8B; font-weight: bold;');
-        console.log(response);
+        if (mode === 'local') {
+          console.log('%cTokens/segundo:', 'color: #4CAF50; font-weight: bold;', this.lastTokensPerSecond());
+        }
         console.groupEnd();
       }),
       finalize(() => this.isLoading.set(false))
@@ -112,6 +129,7 @@ export class EpicrisisService {
    */
   regenerateEpicrisis(): Observable<EpicrisisResponse> {
     const data = this.clinicalData();
+    const episode = this.episodeId();
     const validation = this.validationResult();
 
     if (!data) {
@@ -121,10 +139,7 @@ export class EpicrisisService {
     this.isLoading.set(true);
     this.errorMessage.set('');
 
-    return this.api.post<EpicrisisResponse>('/regenerate-epicrisis', {
-      clinicalData: data,
-      violations: validation?.violations || []
-    }).pipe(
+    return this.modeService.regenerateEpicrisis(data, episode, validation?.violations || []).pipe(
       tap((response) => {
         this.epicrisisText.set(response.text);
         this.validationResult.set(response.validation);
@@ -144,14 +159,32 @@ export class EpicrisisService {
       throw new Error('No hay datos para validar');
     }
 
-    return this.api.post<ValidationResult>('/validate-epicrisis', {
-      text,
-      clinicalData: data
-    }).pipe(
+    return this.modeService.validateEpicrisis(text, data).pipe(
       tap((result) => {
         this.validationResult.set(result);
       })
     );
+  }
+
+  /**
+   * Indexa datos clinicos para RAG local
+   */
+  async indexForLocalRAG(): Promise<number> {
+    const data = this.clinicalData();
+    const episode = this.episodeId();
+
+    if (!data) {
+      throw new Error('No hay datos clínicos cargados');
+    }
+
+    return this.modeService.indexForLocalRAG(data, episode);
+  }
+
+  /**
+   * Responde una pregunta usando RAG local
+   */
+  async askLocalQuestion(question: string): Promise<{ answer: string; sources: any[] }> {
+    return this.modeService.askQuestion(question);
   }
 
   /**
