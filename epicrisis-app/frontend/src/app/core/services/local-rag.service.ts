@@ -720,38 +720,336 @@ export class LocalRAGService {
   }
 
   /**
+   * Pre-extrae diagnósticos con códigos CIE-10 del contexto
+   */
+  private extractDiagnosticos(chunks: Chunk[]): { ingreso: string[], egreso: string[] } {
+    const result = { ingreso: [] as string[], egreso: [] as string[] };
+
+    for (const chunk of chunks) {
+      if (chunk.chunkType !== 'resumen') continue;
+
+      const lines = chunk.text.split('\n');
+      let currentSection = '';
+
+      for (const line of lines) {
+        if (line.includes('Diagnostico de ingreso')) {
+          currentSection = 'ingreso';
+        } else if (line.includes('Diagnostico de egreso')) {
+          currentSection = 'egreso';
+        } else if (line.startsWith('- ') && currentSection) {
+          // Formato: "- J18.9: Neumonía, no especificada"
+          const match = line.match(/^-\s*([A-Z]\d+\.?\d*):?\s*(.+)/i);
+          if (match) {
+            const codigo = match[1];
+            const nombre = match[2].trim();
+            const formatted = `${nombre} (${codigo})`;
+            if (currentSection === 'ingreso') {
+              result.ingreso.push(formatted);
+            } else {
+              result.egreso.push(formatted);
+            }
+          }
+        } else if (!line.startsWith('-') && !line.includes('Diagnostico')) {
+          currentSection = '';
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Pre-extrae procedimientos del contexto
+   */
+  private extractProcedimientos(chunks: Chunk[]): string[] {
+    const result: string[] = [];
+
+    for (const chunk of chunks) {
+      if (chunk.chunkType !== 'resumen') continue;
+
+      const lines = chunk.text.split('\n');
+      let inProcedimientos = false;
+
+      for (const line of lines) {
+        if (line.includes('Procedimientos:')) {
+          inProcedimientos = true;
+        } else if (line.startsWith('- ') && inProcedimientos) {
+          const match = line.match(/^-\s*(.+)/);
+          if (match) {
+            result.push(match[1].trim());
+          }
+        } else if (!line.startsWith('-') && inProcedimientos && line.trim()) {
+          inProcedimientos = false;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Pre-extrae tratamientos intrahospitalarios con códigos ATC
+   */
+  private extractTratamientosIntrahosp(chunks: Chunk[]): string[] {
+    const result: string[] = [];
+
+    for (const chunk of chunks) {
+      if (chunk.chunkType !== 'resumen') continue;
+
+      const lines = chunk.text.split('\n');
+      let inTratamientos = false;
+
+      for (const line of lines) {
+        if (line.includes('Tratamientos intrahospitalarios:')) {
+          inTratamientos = true;
+        } else if (line.startsWith('- ') && inTratamientos) {
+          // Formato: "- [J01CA04] Amoxicilina VO 500mg c/8h"
+          const match = line.match(/^-\s*\[([A-Z]\d+[A-Z]?\d*)\]\s*(.+)/i);
+          if (match) {
+            const codigo = match[1];
+            const resto = match[2].trim();
+            result.push(`${resto} (${codigo})`);
+          } else {
+            // Sin código ATC
+            result.push(line.replace(/^-\s*/, '').trim());
+          }
+        } else if (!line.startsWith('-') && inTratamientos && line.trim()) {
+          inTratamientos = false;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Pre-extrae medicamentos de alta con códigos ATC
+   */
+  private extractMedicamentosAlta(chunks: Chunk[]): string[] {
+    const result: string[] = [];
+
+    for (const chunk of chunks) {
+      if (chunk.chunkType !== 'alta') continue;
+
+      const lines = chunk.text.split('\n');
+      let inMedicamentos = false;
+
+      for (const line of lines) {
+        if (line.includes('Medicamentos:')) {
+          inMedicamentos = true;
+        } else if (line.startsWith('- ') && inMedicamentos) {
+          // Formato: "- [J01CA04] Amoxicilina 500mg VO c/8h por 7 días"
+          const match = line.match(/^-\s*\[([A-Z]\d+[A-Z]?\d*)\]\s*(.+)/i);
+          if (match) {
+            const codigo = match[1];
+            const resto = match[2].trim();
+            result.push(`${resto} (${codigo})`);
+          } else {
+            result.push(line.replace(/^-\s*/, '').trim());
+          }
+        } else if (line.includes('Controles:') || line.includes('Recomendaciones:')) {
+          inMedicamentos = false;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Extrae motivo de ingreso del contexto
+   */
+  private extractMotivoIngreso(chunks: Chunk[]): string {
+    for (const chunk of chunks) {
+      if (chunk.chunkType !== 'resumen') continue;
+      const match = chunk.text.match(/\[MOTIVO\]\s*(.+)/);
+      if (match && match[1] !== 'No especificado') {
+        return match[1].trim();
+      }
+    }
+    return 'No consignado';
+  }
+
+  /**
+   * Extrae controles y recomendaciones de alta
+   */
+  private extractControlesYRecomendaciones(chunks: Chunk[]): { controles: string[], recomendaciones: string[] } {
+    const result = { controles: [] as string[], recomendaciones: [] as string[] };
+
+    for (const chunk of chunks) {
+      if (chunk.chunkType !== 'alta') continue;
+
+      const lines = chunk.text.split('\n');
+      let currentSection = '';
+
+      for (const line of lines) {
+        if (line.includes('Controles:')) {
+          currentSection = 'controles';
+        } else if (line.includes('Recomendaciones:')) {
+          currentSection = 'recomendaciones';
+        } else if (line.startsWith('- ') && currentSection) {
+          const texto = line.replace(/^-\s*/, '').trim();
+          if (currentSection === 'controles') {
+            result.controles.push(texto);
+          } else {
+            result.recomendaciones.push(texto);
+          }
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Calcula días de hospitalización desde las fechas de evolución
+   */
+  private calcularDiasHospitalizacion(chunks: Chunk[]): { dias: number, fechaIngreso: string, fechaAlta: string } | null {
+    const fechas: Date[] = [];
+    const fechasStr: string[] = [];
+
+    for (const chunk of chunks) {
+      if (chunk.chunkType !== 'evolucion_dia') continue;
+      const match = chunk.text.match(/\[FECHA\]\s*(\d{4}-\d{2}-\d{2})/);
+      if (match) {
+        fechas.push(new Date(match[1]));
+        fechasStr.push(match[1]);
+      }
+    }
+
+    if (fechas.length < 2) return null;
+
+    fechas.sort((a, b) => a.getTime() - b.getTime());
+    fechasStr.sort();
+
+    const diffTime = Math.abs(fechas[fechas.length - 1].getTime() - fechas[0].getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return {
+      dias: diffDays,
+      fechaIngreso: fechasStr[0],
+      fechaAlta: fechasStr[fechasStr.length - 1]
+    };
+  }
+
+  /**
    * Construye el prompt para generar epicrisis
+   * Usa datos pre-extraídos para reducir alucinaciones del modelo 3B
    */
   buildEpicrisisPrompt(chunks: Chunk[]): string {
+    // PRE-EXTRAER datos estructurados del contexto
+    const motivo = this.extractMotivoIngreso(chunks);
+    const diagnosticos = this.extractDiagnosticos(chunks);
+    const procedimientos = this.extractProcedimientos(chunks);
+    const tratamientosIntrahosp = this.extractTratamientosIntrahosp(chunks);
+    const medicamentosAlta = this.extractMedicamentosAlta(chunks);
+    const altaInfo = this.extractControlesYRecomendaciones(chunks);
+    const hospitalizacion = this.calcularDiasHospitalizacion(chunks);
+
+    // Extraer evolución (chunks de tipo evolucion_dia)
+    const evolucionChunks = chunks.filter(c => c.chunkType === 'evolucion_dia');
+    const labsChunk = chunks.find(c => c.chunkType === 'laboratorios');
+
     let prompt = '';
 
-    // SYSTEM / ROLE
-    prompt += 'Eres un médico especialista en medicina interna. ';
-    prompt += 'Genera un informe de alta hospitalaria (epicrisis) en español de Chile, siguiendo este formato EXACTO:\n\n';
+    // INSTRUCCIÓN DIRECTA Y SIMPLE
+    prompt += 'Transcribe estos datos clínicos en UN SOLO PÁRRAFO de texto plano.\n';
+    prompt += 'REGLAS:\n';
+    prompt += '1. NO inventes datos que no estén listados abajo\n';
+    prompt += '2. NO uses formato: nada de ** negritas **, * cursivas *, [ corchetes ], guiones largos —\n';
+    prompt += '3. Incluye TODOS los códigos entre paréntesis simples: (J18.9), (J01CA04)\n';
+    prompt += '4. NO inventes deterioro clínico, empeoramiento ni urgencias que no estén documentados\n\n';
 
-    // ESTRUCTURA OBLIGATORIA
-    prompt += 'ESTRUCTURA OBLIGATORIA (un solo párrafo corrido):\n';
-    prompt += '- Motivo y diagnóstico de ingreso (incluye código CIE-10 entre paréntesis)\n';
-    prompt += '- Procedimientos y tratamientos relevantes durante hospitalización (incluye códigos entre paréntesis)\n';
-    prompt += '- Evolución clínica resumida (por días si corresponde, sin repetir)\n';
-    prompt += '- Diagnóstico(s) de egreso (incluye código CIE-10 entre paréntesis)\n';
-    prompt += '- Indicaciones post-alta: medicamentos con dosis/vía/frecuencia/duración (incluye código ATC entre paréntesis)\n\n';
+    // DATOS PRE-EXTRAÍDOS (el modelo solo debe unirlos)
+    prompt += '=== DATOS CLÍNICOS ===\n\n';
 
-    // REGLAS ESTRICTAS
-    prompt += 'REGLAS ESTRICTAS:\n';
-    prompt += '1. Usa EXCLUSIVAMENTE la información del CONTEXTO proporcionado\n';
-    prompt += '2. NO inventes ni agregues información\n';
-    prompt += '3. Incluye SIEMPRE los códigos entre paréntesis para dx, procedimientos y medicamentos\n';
-    prompt += '4. Si falta información, escribe "No consignado"\n';
-    prompt += '5. Escribe en español clínico de Chile\n';
-    prompt += '6. Formato: UN SOLO PÁRRAFO continuo, sin bullets ni saltos de línea\n\n';
+    // Hospitalización calculada
+    if (hospitalizacion) {
+      prompt += `HOSPITALIZACIÓN: ${hospitalizacion.dias} días (desde ${hospitalizacion.fechaIngreso} hasta ${hospitalizacion.fechaAlta})\n`;
+    }
 
-    // CONTEXTO CLINICO
-    prompt += 'CONTEXTO CLINICO:\n';
-    chunks.forEach(chunk => {
-      const compact = this.compactChunkForPrompt(chunk, 1400);
-      prompt += `${compact}\n\n`;
-    });
+    // Motivo y diagnóstico de ingreso
+    prompt += `MOTIVO DE INGRESO: ${motivo}\n`;
+    if (diagnosticos.ingreso.length > 0) {
+      prompt += `DIAGNÓSTICO DE INGRESO: ${diagnosticos.ingreso.join(', ')}\n`;
+    } else {
+      prompt += `DIAGNÓSTICO DE INGRESO: No consignado\n`;
+    }
+
+    // Procedimientos - enfatizar frase exacta
+    if (procedimientos.length > 0) {
+      prompt += `PROCEDIMIENTOS: ${procedimientos.join(', ')}\n`;
+    } else {
+      prompt += `PROCEDIMIENTOS: "Sin procedimientos consignados" (usar esta frase exacta)\n`;
+    }
+
+    // Tratamientos intrahospitalarios - enfatizar frase exacta
+    if (tratamientosIntrahosp.length > 0) {
+      prompt += `TRATAMIENTOS INTRAHOSPITALARIOS: ${tratamientosIntrahosp.join('; ')}\n`;
+    } else {
+      prompt += `TRATAMIENTOS INTRAHOSPITALARIOS: "Sin tratamientos intrahospitalarios consignados" (usar esta frase exacta)\n`;
+    }
+
+    // Evolución (resumida del contexto)
+    if (evolucionChunks.length > 0) {
+      prompt += `EVOLUCIÓN:\n`;
+      for (const evoChunk of evolucionChunks) {
+        const fechaMatch = evoChunk.text.match(/\[FECHA\]\s*(.+)/);
+        const textoMatch = evoChunk.text.match(/\[TEXTO\]\s*([\s\S]+?)(?:\[PROFESIONAL\]|$)/);
+        if (fechaMatch && textoMatch) {
+          const fecha = fechaMatch[1].trim();
+          let texto = textoMatch[1].trim().substring(0, 180);
+          if (textoMatch[1].trim().length > 180) texto += '...';
+          prompt += `- ${fecha}: ${texto}\n`;
+        }
+      }
+    }
+
+    // Laboratorios
+    if (labsChunk) {
+      const labLines = labsChunk.text.split('\n').filter(l => l.startsWith('-'));
+      if (labLines.length > 0) {
+        prompt += `LABORATORIOS: ${labLines.map(l => l.replace(/^-\s*/, '')).join('; ')}\n`;
+      }
+    }
+
+    // Diagnósticos de egreso - CRÍTICO: enfatizar que son DIFERENTES al de ingreso
+    if (diagnosticos.egreso.length > 0) {
+      prompt += `\n*** DIAGNÓSTICOS DE EGRESO (OBLIGATORIO incluir todos con código CIE-10): ***\n`;
+      diagnosticos.egreso.forEach(dx => {
+        prompt += `  • ${dx}\n`;
+      });
+    } else {
+      prompt += `DIAGNÓSTICO DE EGRESO: No consignado\n`;
+    }
+
+    // Indicaciones al alta - ENFATIZAR CÓDIGOS ATC
+    prompt += `\n*** INDICACIONES AL ALTA: ***\n`;
+    if (medicamentosAlta.length > 0) {
+      prompt += `MEDICAMENTOS (OBLIGATORIO incluir código ATC entre paréntesis para cada uno):\n`;
+      medicamentosAlta.forEach(med => {
+        prompt += `  • ${med}\n`;
+      });
+    } else {
+      prompt += `MEDICAMENTOS: Sin medicamentos al alta\n`;
+    }
+    if (altaInfo.controles.length > 0) {
+      prompt += `CONTROLES: ${altaInfo.controles.join('; ')}\n`;
+    }
+    if (altaInfo.recomendaciones.length > 0) {
+      prompt += `RECOMENDACIONES: ${altaInfo.recomendaciones.join('; ')}\n`;
+    }
+
+    prompt += '\n=== FIN DATOS ===\n\n';
+
+    // INSTRUCCIÓN FINAL - Más específica sobre diagnósticos de egreso
+    prompt += 'Escribe la epicrisis en UN PÁRRAFO CONTINUO de texto plano.\n';
+    prompt += 'OBLIGATORIO:\n';
+    prompt += '1. Incluir TODOS los diagnósticos de egreso con su código CIE-10: ejemplo "neumonía lobar (J18.1), hipertensión esencial (I10)"\n';
+    prompt += '2. Incluir TODOS los medicamentos de alta con su código ATC: ejemplo "amoxicilina 500mg VO c/8h x7d (J01CA04)"\n';
+    prompt += '3. NO usar asteriscos, corchetes ni negritas\n';
+    prompt += '4. NO inventar empeoramiento ni deterioro clínico\n\n';
+    prompt += 'Epicrisis:';
 
     return prompt;
   }
@@ -843,6 +1141,9 @@ export class LocalRAGService {
         output = result[0]?.generated_text || '';
       }
 
+      // Post-procesar para limpiar formato no deseado
+      output = this.cleanOutputFormat(output);
+
       return output.trim();
 
     } finally {
@@ -852,16 +1153,89 @@ export class LocalRAGService {
   }
 
   /**
+   * Limpia formato no deseado del output (negritas, corchetes, guiones largos)
+   */
+  private cleanOutputFormat(text: string): string {
+    let cleaned = text;
+
+    // Remover negritas **texto** -> texto
+    cleaned = cleaned.replace(/\*\*([^*]+)\*\*/g, '$1');
+
+    // Remover cursivas *texto* -> texto
+    cleaned = cleaned.replace(/\*([^*]+)\*/g, '$1');
+
+    // Convertir [código] -> (código) para códigos médicos
+    cleaned = cleaned.replace(/\[([A-Z]\d+[A-Z]?\d*)\]/gi, '($1)');
+
+    // Remover guiones largos — -> ,
+    cleaned = cleaned.replace(/\s*—\s*/g, ', ');
+
+    // Remover dobles paréntesis ((código)) -> (código)
+    cleaned = cleaned.replace(/\(\(([^)]+)\)\)/g, '($1)');
+
+    // Agregar paréntesis a códigos ATC/CIE-10 que estén sueltos (sin paréntesis)
+    // Patrón: ", C09AA02" o " C09AA02." -> ", (C09AA02)" o " (C09AA02)."
+    cleaned = cleaned.replace(/([,\s])([A-Z]\d{2}[A-Z]{2}\d{2})([,.\s]|$)/gi, '$1($2)$3');
+
+    // Patrón para códigos CIE-10 sueltos: " J18.1" -> " (J18.1)"
+    cleaned = cleaned.replace(/([,\s])([A-Z]\d+\.\d+)([,.\s]|$)/gi, '$1($2)$3');
+
+    // Normalizar espacios múltiples
+    cleaned = cleaned.replace(/\s+/g, ' ');
+
+    return cleaned.trim();
+  }
+
+  /**
    * Valida que el output no contenga alucinaciones
    */
   validateOutput(output: string, chunks: Chunk[]): LocalValidationResult {
     const warnings: ValidationWarning[] = [];
+    const outputLower = output.toLowerCase();
+    const contextText = chunks.map(c => c.text).join(' ').toLowerCase();
+
+    // Validar que los códigos ATC estén presentes
+    const codigosATCEsperados = this.extractMedicamentosAlta(chunks)
+      .map(med => {
+        const match = med.match(/\(([A-Z]\d+[A-Z]?\d*)\)/i);
+        return match ? match[1] : null;
+      })
+      .filter(Boolean) as string[];
+
+    for (const codigoATC of codigosATCEsperados) {
+      if (!output.includes(codigoATC)) {
+        warnings.push({
+          type: 'unmatched_indication',
+          message: `Código ATC faltante en output: ${codigoATC}`,
+          severity: 'medium'
+        });
+      }
+    }
+
+    // Validar que los códigos CIE-10 estén presentes
+    const diagnosticos = this.extractDiagnosticos(chunks);
+    const codigosCIE10 = [...diagnosticos.ingreso, ...diagnosticos.egreso]
+      .map(dx => {
+        const match = dx.match(/\(([A-Z]\d+\.?\d*)\)/i);
+        return match ? match[1] : null;
+      })
+      .filter(Boolean) as string[];
+
+    for (const codigoCIE of codigosCIE10) {
+      if (!output.includes(codigoCIE)) {
+        warnings.push({
+          type: 'unmatched_indication',
+          message: `Código CIE-10 faltante en output: ${codigoCIE}`,
+          severity: 'medium'
+        });
+      }
+    }
 
     // Detectar patrones de basura
     if (/\b\d{3,}(?:-\d{1,4}){4,}\b/.test(output)) {
       warnings.push({
         type: 'invented_number',
-        message: 'Patron de numeros repetitivos detectado',
+        message: 'Patrón de números repetitivos detectado',
         severity: 'high'
       });
     }
@@ -872,6 +1246,103 @@ export class LocalRAGService {
         message: 'Tokens repetitivos detectados',
         severity: 'high'
       });
+    }
+
+    // Detectar formato no permitido (negritas, corchetes)
+    if (/\*\*[^*]+\*\*/.test(output)) {
+      warnings.push({
+        type: 'invented_section',
+        message: 'Formato no permitido: negritas (**texto**)',
+        severity: 'medium'
+      });
+    }
+    if (/\[[A-Z]\d+[A-Z]?\d*\]/i.test(output)) {
+      warnings.push({
+        type: 'invented_section',
+        message: 'Formato no permitido: código entre corchetes [código]',
+        severity: 'medium'
+      });
+    }
+
+    // Detectar alucinaciones de deterioro clínico inventado
+    const deterioroPatterns = [
+      { pattern: /empeoramiento\s*(cl[ií]nico|inicial|progresivo)?/i, name: 'empeoramiento clínico' },
+      { pattern: /manejo\s*(respiratorio\s*)?urgente/i, name: 'manejo urgente' },
+      { pattern: /deterioro\s*(cl[ií]nico|progresivo|r[aá]pido)?/i, name: 'deterioro clínico' },
+      { pattern: /descompensaci[oó]n/i, name: 'descompensación' },
+      { pattern: /falla\s*(org[aá]nica|respiratoria|card[ií]aca)/i, name: 'falla orgánica' },
+      { pattern: /inestabilidad\s*hemodinámica/i, name: 'inestabilidad hemodinámica' },
+    ];
+
+    for (const dp of deterioroPatterns) {
+      if (dp.pattern.test(output) && !dp.pattern.test(contextText)) {
+        warnings.push({
+          type: 'invented_section',
+          message: `Posible alucinación de deterioro: "${dp.name}" no documentado`,
+          severity: 'high'
+        });
+      }
+    }
+
+    // ALUCINACIONES ESPECÍFICAS DETECTADAS EN PRUEBAS
+    const hallucinations = [
+      { pattern: /uci\s*(pedi[aá]trica|adulto)?/i, name: 'UCI', checkContext: true },
+      { pattern: /unidad\s*de\s*cuidados?\s*intensivos?/i, name: 'Unidad de Cuidados Intensivos', checkContext: true },
+      { pattern: /staphylococcus/i, name: 'Staphylococcus', checkContext: true },
+      { pattern: /streptococcus/i, name: 'Streptococcus', checkContext: true },
+      { pattern: /e\.?\s*coli/i, name: 'E. coli', checkContext: true },
+      { pattern: /pseudomonas/i, name: 'Pseudomonas', checkContext: true },
+      { pattern: /klebsiella/i, name: 'Klebsiella', checkContext: true },
+      { pattern: /amoxicilina\s*(iv|intravenosa|ev)/i, name: 'Amoxicilina IV (no existe)', checkContext: false },
+      { pattern: /hemocultivo\s*(positivo|negativo)/i, name: 'Hemocultivo', checkContext: true },
+      { pattern: /urocultivo\s*(positivo|negativo)/i, name: 'Urocultivo', checkContext: true },
+      { pattern: /cultivo\s*(positivo|negativo)/i, name: 'Cultivo', checkContext: true },
+      { pattern: /sepsis/i, name: 'Sepsis', checkContext: true },
+      { pattern: /shock\s*s[eé]ptico/i, name: 'Shock séptico', checkContext: true },
+      { pattern: /ventilaci[oó]n\s*mec[aá]nica/i, name: 'Ventilación mecánica', checkContext: true },
+      { pattern: /intubaci[oó]n/i, name: 'Intubación', checkContext: true },
+    ];
+
+    for (const h of hallucinations) {
+      if (h.pattern.test(output)) {
+        if (h.checkContext) {
+          // Solo es alucinación si no está en el contexto
+          if (!h.pattern.test(contextText)) {
+            warnings.push({
+              type: 'invented_section',
+              message: `Posible alucinación: "${h.name}" no está en el contexto clínico`,
+              severity: 'high'
+            });
+          }
+        } else {
+          // Siempre es error (ej: amoxicilina IV no existe)
+          warnings.push({
+            type: 'invented_section',
+            message: `Error clínico: "${h.name}"`,
+            severity: 'high'
+          });
+        }
+      }
+    }
+
+    // Detectar signos vitales inventados (si no están en el contexto)
+    const vitalPatterns = [
+      { pattern: /ta\s*[:=]?\s*\d+\/\d+/i, name: 'TA (Tensión arterial)' },
+      { pattern: /fc\s*[:=]?\s*\d+/i, name: 'FC (Frecuencia cardíaca)' },
+      { pattern: /fr\s*[:=]?\s*\d+/i, name: 'FR (Frecuencia respiratoria)' },
+      { pattern: /temperatura\s*[:=]?\s*\d+[.,]?\d*/i, name: 'Temperatura' },
+      { pattern: /sato2?\s*[:=]?\s*\d+/i, name: 'Saturación O2' },
+    ];
+
+    for (const vp of vitalPatterns) {
+      const matchOutput = output.match(vp.pattern);
+      if (matchOutput && !vp.pattern.test(contextText)) {
+        warnings.push({
+          type: 'invented_number',
+          message: `Signo vital posiblemente inventado: ${vp.name}`,
+          severity: 'medium'
+        });
+      }
     }
 
     // Validar indicaciones de alta
@@ -887,7 +1358,7 @@ export class LocalRAGService {
       ok: highSeverityCount === 0,
       warnings,
       summary: warnings.length === 0
-        ? 'Validacion correcta'
+        ? 'Validación correcta'
         : `${warnings.length} advertencia(s) encontrada(s)`
     };
   }
