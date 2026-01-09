@@ -107,6 +107,8 @@ Usuario -> Exportar
 | Angular CDK | 21.0.0 | Utilidades de componentes |
 | RxJS | 7.8.0 | Programacion reactiva |
 | Zone.js | 0.15.0 | Deteccion de cambios (opcional con zoneless) |
+| Transformers.js | 3.x | Inferencia ONNX en navegador (CDN) |
+| IndexedDB | Nativo | Almacenamiento de vectores/chunks |
 
 **Caracteristicas de Angular 21:**
 - Standalone Components (sin NgModules)
@@ -114,6 +116,12 @@ Usuario -> Exportar
 - Signals para estado reactivo
 - Control flow moderno (`@if`, `@for`, `@else`)
 - Functional HTTP Interceptors
+
+**Inferencia Local en Navegador:**
+- Transformers.js cargado dinamicamente desde CDN
+- Soporte para WebGPU (GPU acelerada) y WASM (CPU fallback)
+- Modelos ONNX cuantizados (q4, q4f16)
+- Tipos de modelo: causal-lm, image-text-to-text, text-generation-web, pipeline
 
 ## 3.2 Backend
 
@@ -190,8 +198,11 @@ epicrisis-app/
 |   |   |   |   +-- services/
 |   |   |   |   |   +-- api.service.ts        # HTTP wrapper
 |   |   |   |   |   +-- epicrisis.service.ts  # Logica de negocio
+|   |   |   |   |   +-- local-rag.service.ts  # RAG local con ONNX/Transformers.js
+|   |   |   |   |   +-- indexeddb.service.ts  # Almacenamiento de vectores
 |   |   |   |   +-- models/
-|   |   |   |   |   +-- clinical.types.ts     # Interfaces
+|   |   |   |   |   +-- clinical.types.ts     # Interfaces clinicas
+|   |   |   |   |   +-- rag.types.ts          # Tipos RAG, modelos ONNX, configs
 |   |   |   |   +-- interceptors/
 |   |   |   |       +-- http-error.interceptor.ts
 |   |   |   +-- features/
@@ -200,17 +211,19 @@ epicrisis-app/
 |   |   |   |   +-- epicrisis-generator/      # Generador de epicrisis
 |   |   |   |   +-- validation-panel/         # Panel de validacion
 |   |   |   |   +-- export-options/           # Opciones de exportacion
+|   |   |   |   +-- model-loader/             # Selector/cargador de modelos ONNX
 |   |   |   +-- shared/
 |   |   |       +-- pipes/
 |   |   |       +-- components/
 |   |   +-- environments/
-|   |   |   +-- environment.ts
+|   |   |   +-- environment.ts            # apiUrl, localModelsPath
 |   |   |   +-- environment.prod.ts
 |   |   +-- styles/
 |   |       +-- styles.scss
 |   +-- angular.json
 |   +-- package.json
 |   +-- tsconfig.json
+|   +-- proxy.conf.json                   # Proxy para modelos locales
 |   +-- Dockerfile
 |   +-- nginx.conf
 |
@@ -223,12 +236,23 @@ epicrisis-app/
 |   +-- indexes/
 |   +-- materialized_views/
 |
-+-- models/
-|   +-- llm/                              # Modelos LLM (GGUF)
++-- models/                               # Excluido de git (.gitignore)
+|   +-- llm/                              # Modelos LLM (GGUF) para backend
 |   +-- embeddings/                       # Modelos de embeddings
+|   +-- Ministral-3b-instruct/            # Modelo ONNX para frontend
+|   |   +-- config.json
+|   |   +-- tokenizer.json
+|   |   +-- onnx/model_q4f16.onnx
+|   +-- Qwen3-4B-ONNX/                    # Modelo ONNX con thinking mode
+|   |   +-- config.json
+|   |   +-- tokenizer.json
+|   |   +-- generation_config.json
+|   |   +-- onnx/model_q4f16.onnx
+|   +-- Phi-3.5-mini-instruct-onnx-web/   # Modelo ONNX (no recomendado)
 |
 +-- docker-compose.yml
 +-- download_models.py
++-- .gitignore                            # Excluye models/, *.onnx, *.onnx_data
 ```
 
 ---
@@ -1905,16 +1929,210 @@ END get_discharge_summary_json;
 
 # 8. MODELOS DE IA/LLM
 
-## 8.1 Modelos Soportados
+## 8.1 Arquitectura de Modelos
+
+El sistema soporta dos modos de ejecucion de modelos LLM:
+
+### Modo Backend (GGUF)
+Modelos ejecutados en el servidor via llama.cpp:
 
 | Modelo | Archivo | Tamano | Uso |
 |--------|---------|--------|-----|
 | TinyLlama 1.1B Chat Q4 | `tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf` | 637MB | Desarrollo |
 | Llama 3.2 3B Instruct Q4 | `Llama-3.2-3B-Instruct-Q4_K_M.gguf` | 1.9GB | Produccion balanceada |
 | Mistral 7B Instruct Q4 | `mistral-7b-instruct-v0.2.Q4_K_M.gguf` | 4.1GB | Produccion alta calidad |
-| Multilingual E5-small | Directorio ONNX | ~100MB | Embeddings para RAG |
 
-## 8.2 Configuracion de Modelos
+### Modo Frontend (ONNX - Transformers.js)
+Modelos ejecutados directamente en el navegador con WebGPU/WASM:
+
+| Modelo | ID | Tamano | Tipo | Recomendado |
+|--------|-----|--------|------|-------------|
+| Ministral 3B Instruct | `onnx-community/Ministral-3b-instruct` | ~1.9GB | `image-text-to-text` | ✅ Si |
+| Phi-3.5 Mini Instruct | `onnx-community/Phi-3.5-mini-instruct-onnx-web` | ~2.3GB | `text-generation-web` | ❌ No (calidad) |
+| Qwen3 4B | `Qwen3-4B-ONNX` (local) | ~2.8GB | `causal-lm` | ❌ No (calidad) |
+| SmolLM2 1.7B | `HuggingFaceTB/SmolLM2-1.7B-Instruct` | ~1GB | `causal-lm` | Solo pruebas |
+
+## 8.2 Configuracion de Modelos ONNX (Frontend)
+
+### Tipos de Modelos Soportados
+
+```typescript
+// rag.types.ts
+type ModelType = 'pipeline' | 'causal-lm' | 'image-text-to-text' | 'text-generation-web';
+
+interface LLMModelConfig {
+  id: string;           // ID del modelo (HuggingFace o local/)
+  name: string;         // Nombre para mostrar en UI
+  size: string;         // Tamano aproximado
+  type: ModelType;      // Tipo de carga
+  dtype: string;        // Cuantizacion (q4, q4f16, fp16)
+  remoteOnly?: boolean; // Solo desde HuggingFace
+  wasmOnly?: boolean;   // Solo WASM (sin WebGPU)
+  recommended?: boolean;// Recomendado para produccion
+  localPath?: string;   // Ruta local si id empieza con 'local/'
+}
+```
+
+### Configuraciones de Generacion
+
+```typescript
+// rag.types.ts
+const GENERATION_CONFIGS = {
+  resumen_alta: {
+    max_new_tokens: 500,
+    min_length: 100,
+    temperature: 0.3,
+    top_p: 0.95,
+    repetition_penalty: 1.2,
+    do_sample: true
+  },
+  qwen3_thinking: {  // Para modelos con thinking mode
+    max_new_tokens: 2048,  // 1000+ thinking + 500+ respuesta
+    min_length: 100,
+    temperature: 0.6,
+    top_p: 0.95,
+    repetition_penalty: 1.1,
+    do_sample: true
+  }
+};
+```
+
+### Thinking Mode (Qwen3)
+
+Qwen3 soporta un modo de "pensamiento" donde el modelo razona antes de responder:
+
+```typescript
+// local-rag.service.ts
+const isQwen3 = this.currentModelConfig?.id?.toLowerCase().includes('qwen3');
+
+if (isQwen3) {
+  effectiveConfig = GENERATION_CONFIGS['qwen3_thinking'];
+  templateOptions.enable_thinking = true;
+}
+
+// Post-procesamiento: extraer respuesta despues de </think>
+if (cleaned.includes('<think>') && cleaned.includes('</think>')) {
+  const thinkEndIndex = cleaned.indexOf('</think>');
+  cleaned = cleaned.substring(thinkEndIndex + '</think>'.length).trim();
+}
+```
+
+## 8.3 Servicio LocalRAG (Frontend)
+
+### Inicializacion
+
+```typescript
+// local-rag.service.ts
+async initialize(): Promise<void> {
+  // Cargar Transformers.js desde CDN
+  const cdnUrl = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/+esm';
+  this.transformers = await this.loadTransformersFromCDN(cdnUrl);
+
+  // Configurar entorno
+  this.env = this.transformers.env;
+  this.env.allowLocalModels = false;
+  this.env.allowRemoteModels = true;
+
+  // Configurar threads WASM
+  if (window.crossOriginIsolated) {
+    this.env.backends.onnx.wasm.numThreads = navigator.hardwareConcurrency || 4;
+  } else {
+    this.env.backends.onnx.wasm.numThreads = 1;
+  }
+}
+```
+
+### Carga de Modelos por Tipo
+
+```typescript
+async loadModel(modelId: string): Promise<void> {
+  const config = this.getModelConfig(modelId);
+
+  switch (config.type) {
+    case 'causal-lm':
+      this.tokenizer = await AutoTokenizer.from_pretrained(modelPath);
+      this.llm = await AutoModelForCausalLM.from_pretrained(modelPath, {
+        dtype: config.dtype,
+        device: deviceType
+      });
+      break;
+
+    case 'image-text-to-text':
+      this.processor = await AutoProcessor.from_pretrained(modelPath);
+      this.llm = await AutoModelForImageTextToText.from_pretrained(modelPath, {
+        dtype: config.dtype,
+        device: deviceType
+      });
+      break;
+
+    case 'text-generation-web':
+      this.llm = await pipeline('text-generation', modelPath, {
+        dtype: config.dtype,
+        device: deviceType
+      });
+      break;
+  }
+}
+```
+
+## 8.4 Validacion de Output (Frontend)
+
+### Sistema de Validacion
+
+```typescript
+// local-rag.service.ts
+validateOutput(output: string, chunks: Chunk[]): LocalValidationResult {
+  const warnings: ValidationWarning[] = [];
+
+  // 1. Validar codigos ATC presentes
+  for (const codigoATC of codigosATCEsperados) {
+    if (!output.includes(codigoATC)) {
+      warnings.push({ type: 'unmatched_indication', message: `Código ATC faltante: ${codigoATC}` });
+    }
+  }
+
+  // 2. Validar codigos CIE-10 presentes
+  for (const codigoCIE of codigosCIE10) {
+    if (!output.includes(codigoCIE)) {
+      warnings.push({ type: 'unmatched_indication', message: `Código CIE-10 faltante: ${codigoCIE}` });
+    }
+  }
+
+  // 3. Detectar patrones de alucinacion
+  const hallucinations = [
+    { pattern: /uci/i, name: 'UCI', checkContext: true },
+    { pattern: /sepsis/i, name: 'Sepsis', checkContext: true },
+    { pattern: /intubaci[oó]n/i, name: 'Intubación', checkContext: true },
+    // ... mas patrones
+  ];
+
+  // 4. Detectar deterioro clinico inventado
+  const deterioroPatterns = [
+    { pattern: /descompensaci[oó]n/i, name: 'descompensación' },
+    { pattern: /deterioro\s*cl[ií]nico/i, name: 'deterioro clínico' },
+    // ... mas patrones
+  ];
+
+  // 5. Validar numeros contra contexto de alta
+  // NOTA: Solo valida contra chunk de alta, puede generar falsos positivos
+  //       para codigos de procedimientos en otros chunks
+
+  return { ok: highSeverityCount === 0, warnings };
+}
+```
+
+### Tipos de Warnings
+
+| Tipo | Severidad | Descripcion |
+|------|-----------|-------------|
+| `unmatched_indication` | medium | Codigo ATC/CIE-10 faltante en output |
+| `invented_number` | medium/high | Numero no presente en contexto |
+| `invented_section` | high | Patron de alucinacion detectado |
+| `invented_duration` | medium | Duracion posiblemente inventada |
+
+## 8.5 Modelos Locales (Backend)
+
+### Configuracion de Variables de Entorno
 
 ```bash
 # .env
@@ -1930,7 +2148,7 @@ TOP_K=40
 N_THREADS=4
 ```
 
-## 8.3 Descarga de Modelos
+### Descarga de Modelos GGUF
 
 ```python
 # download_models.py
@@ -1943,12 +2161,81 @@ hf_hub_download(
     local_dir="./models/llm/tinyllama-1.1b-chat-q4"
 )
 
-# Multilingual E5-small
+# Multilingual E5-small (Embeddings)
 hf_hub_download(
     repo_id="intfloat/multilingual-e5-small",
     local_dir="./models/embeddings/multilingual-e5-small"
 )
 ```
+
+## 8.6 Modelos ONNX Locales (Frontend via Backend)
+
+Para servir modelos ONNX desde el backend local:
+
+### Estructura de Directorios
+
+```
+epicrisis-app/
+  models/
+    Ministral-3b-instruct/
+      config.json
+      tokenizer.json
+      tokenizer_config.json
+      onnx/
+        model_q4f16.onnx
+        model_q4f16.onnx_data
+    Qwen3-4B-ONNX/
+      config.json
+      tokenizer.json
+      tokenizer_config.json
+      generation_config.json
+      onnx/
+        model_q4f16.onnx
+        model_q4f16.onnx_data
+        model_q4f16.onnx_data_1
+```
+
+### Configuracion del Backend para Servir Modelos
+
+```typescript
+// backend/src/index.ts
+app.use('/models', express.static(path.join(__dirname, '../../models')));
+
+// Endpoint de configuracion ONNX
+app.get('/api/onnx-config', (req, res) => {
+  res.json({
+    modelSource: 'local',
+    modelsBaseUrl: '/models',
+    availableModels: ['Ministral-3b-instruct', 'Qwen3-4B-ONNX']
+  });
+});
+```
+
+### Nota sobre .gitignore
+
+Los modelos ONNX son muy grandes (1-3GB) y no se suben al repositorio:
+
+```gitignore
+# .gitignore
+models/
+*.onnx
+*.onnx_data
+```
+
+## 8.7 Recomendaciones de Uso
+
+| Caso de Uso | Modelo Recomendado | Razon |
+|-------------|-------------------|-------|
+| Produccion (calidad) | Ministral 3B | Mejor calidad en espanol clinico |
+| Desarrollo/Pruebas | SmolLM2 1.7B | Rapido, bajo consumo de memoria |
+| Sin WebGPU | Cualquiera con `wasmOnly: true` | Compatible con todos los navegadores |
+| Razonamiento complejo | Qwen3 4B (thinking) | Permite al modelo "pensar" antes de responder |
+
+### Limitaciones Conocidas
+
+1. **Phi-3.5**: Calidad pobre en espanol clinico, mezcla idiomas
+2. **Qwen3-4B**: Errores ortograficos, fechas incorrectas, codigos corruptos incluso con thinking mode
+3. **Validacion de numeros**: Puede generar falsos positivos para codigos de procedimientos que estan en chunks diferentes al de alta
 
 ---
 
