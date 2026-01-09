@@ -46,7 +46,7 @@ export class LocalRAGService {
   private llm: any = null;
   private tokenizer: any = null;
   private processor: any = null;
-  private modelType: 'pipeline' | 'causal-lm' | 'image-text-to-text' | null = null;
+  private modelType: 'pipeline' | 'causal-lm' | 'image-text-to-text' | 'text-generation-web' | null = null;
   private currentModelConfig: LLMModelConfig | null = null;
 
   // Estado del embedder
@@ -281,8 +281,8 @@ export class LocalRAGService {
 
       // Cargar segun tipo de modelo
       if (modelConfig.type === 'image-text-to-text') {
-        // Ministral y modelos multimodales
-        console.log('[LocalRAG] Cargando modelo image-text-to-text...');
+        // Ministral y modelos multimodales con visión
+        console.log('[LocalRAG] Cargando modelo image-text-to-text (multimodal)...');
 
         this.processor = await this.transformers.AutoProcessor.from_pretrained(modelPath, loadOptions);
         this.tokenizer = this.processor.tokenizer;
@@ -294,8 +294,22 @@ export class LocalRAGService {
         });
         this.modelType = 'image-text-to-text';
 
+      } else if (modelConfig.type === 'text-generation-web') {
+        // Phi-3.5 y modelos solo-texto optimizados para WebGPU
+        // Usan AutoModelForCausalLM pero con configuración específica para web
+        console.log('[LocalRAG] Cargando modelo text-generation-web (Phi-3.5)...');
+
+        this.tokenizer = await this.transformers.AutoTokenizer.from_pretrained(modelPath, loadOptions);
+
+        this.llm = await this.transformers.AutoModelForCausalLM.from_pretrained(modelPath, {
+          ...loadOptions,
+          dtype,
+          device
+        });
+        this.modelType = 'text-generation-web';
+
       } else if (modelConfig.type === 'causal-lm') {
-        // Llama, Phi, Granite, SmolLM, etc.
+        // Llama, Granite, SmolLM, etc. (modelos causal-lm estándar)
         console.log('[LocalRAG] Cargando modelo causal-lm...');
 
         this.tokenizer = await this.transformers.AutoTokenizer.from_pretrained(modelPath, loadOptions);
@@ -1286,12 +1300,67 @@ export class LocalRAGService {
         output = decoded[0] || '';
 
       } else if (this.modelType === 'causal-lm') {
-        // Llama, Phi, Granite, etc.
+        // Llama, Granite, SmolLM, Qwen3, etc.
+        let formattedPrompt = prompt;
+
+        // Detectar si es Qwen3 para habilitar modo thinking
+        const isQwen3 = this.currentModelConfig?.id?.toLowerCase().includes('qwen3') ||
+                        this.currentModelConfig?.id?.toLowerCase().includes('qwen-3');
+
+        // Configuración ajustada para Qwen3 con thinking
+        let effectiveConfig = config;
+        if (isQwen3) {
+          effectiveConfig = GENERATION_CONFIGS['qwen3_thinking'];
+          console.log('[LocalRAG] Qwen3 detectado: usando configuración con thinking mode');
+          console.log('[LocalRAG] max_new_tokens:', effectiveConfig.max_new_tokens);
+        }
+
+        if (this.tokenizer.apply_chat_template) {
+          const messages = [
+            { role: 'system', content: 'Eres un asistente médico experto en redacción de informes clínicos en español. Genera texto clínico preciso y profesional.' },
+            { role: 'user', content: prompt }
+          ];
+
+          // Opciones del chat template
+          const templateOptions: any = {
+            tokenize: false,
+            add_generation_prompt: true
+          };
+
+          // Habilitar thinking mode para Qwen3 (permite al modelo razonar antes de responder)
+          if (isQwen3) {
+            templateOptions.enable_thinking = true;
+            console.log('[LocalRAG] Qwen3: thinking mode HABILITADO');
+          }
+
+          formattedPrompt = this.tokenizer.apply_chat_template(messages, templateOptions);
+        }
+
+        const inputs = this.tokenizer(formattedPrompt, { return_tensors: 'pt' });
+        const inputLength = inputs.input_ids.dims.at(-1);
+
+        const outputs = await this.llm.generate({
+          ...inputs,
+          max_new_tokens: effectiveConfig.max_new_tokens,
+          temperature: effectiveConfig.temperature,
+          top_p: effectiveConfig.top_p,
+          repetition_penalty: Math.max(effectiveConfig.repetition_penalty, 1.2),
+          no_repeat_ngram_size: 3,
+          do_sample: effectiveConfig.temperature > 0
+        });
+
+        const newTokens = outputs.slice(null, [inputLength, null]);
+        const decoded = this.tokenizer.batch_decode(newTokens, { skip_special_tokens: true });
+        output = decoded[0] || '';
+
+      } else if (this.modelType === 'text-generation-web') {
+        // Phi-3.5 y modelos solo-texto optimizados para WebGPU
+        // Similar a causal-lm pero con formato de chat específico de Phi
         let formattedPrompt = prompt;
 
         if (this.tokenizer.apply_chat_template) {
           const messages = [
-            { role: 'system', content: 'Eres un asistente medico experto en redaccion de informes clinicos.' },
+            { role: 'system', content: 'Eres un asistente medico experto en redaccion de informes clinicos. Responde de manera precisa y concisa.' },
             { role: 'user', content: prompt }
           ];
           formattedPrompt = this.tokenizer.apply_chat_template(messages, {
@@ -1303,12 +1372,20 @@ export class LocalRAGService {
         const inputs = this.tokenizer(formattedPrompt, { return_tensors: 'pt' });
         const inputLength = inputs.input_ids.dims.at(-1);
 
+        // Phi-3.5 tiene ventana de contexto de 128K, pero ajustamos para eficiencia
+        let adjustedMaxTokens = config.max_new_tokens;
+        const maxContextLength = 8192; // Limitar para eficiencia en navegador
+        if (inputLength + config.max_new_tokens > maxContextLength) {
+          adjustedMaxTokens = Math.max(50, maxContextLength - inputLength);
+          console.log(`[LocalRAG] Phi-3.5: Ajustando max_new_tokens de ${config.max_new_tokens} a ${adjustedMaxTokens}`);
+        }
+
         const outputs = await this.llm.generate({
           ...inputs,
-          max_new_tokens: config.max_new_tokens,
+          max_new_tokens: adjustedMaxTokens,
           temperature: config.temperature,
           top_p: config.top_p,
-          repetition_penalty: Math.max(config.repetition_penalty, 1.5),
+          repetition_penalty: Math.max(config.repetition_penalty, 1.3),
           no_repeat_ngram_size: 3,
           do_sample: config.temperature > 0
         });
@@ -1341,11 +1418,53 @@ export class LocalRAGService {
   }
 
   /**
-   * Limpia formato no deseado del output (negritas, corchetes, guiones largos)
+   * Limpia formato no deseado del output (negritas, corchetes, guiones largos, tags thinking)
    */
   private cleanOutputFormat(text: string): string {
     let cleaned = text;
 
+    // ============================================
+    // PROCESAR TAGS DE THINKING (Qwen3 y similares)
+    // El modelo genera: <think>razonamiento</think>respuesta
+    // Queremos extraer solo la respuesta después del thinking
+    // ============================================
+
+    // Caso 1: Bloque completo <think>...</think> seguido de respuesta
+    // Extraer solo lo que viene después del </think>
+    if (cleaned.includes('<think>') && cleaned.includes('</think>')) {
+      const thinkEndIndex = cleaned.indexOf('</think>');
+      const afterThink = cleaned.substring(thinkEndIndex + '</think>'.length).trim();
+      if (afterThink.length > 0) {
+        console.log('[LocalRAG] Thinking detectado, extrayendo respuesta después de </think>');
+        console.log('[LocalRAG] Longitud thinking:', thinkEndIndex, 'chars');
+        console.log('[LocalRAG] Longitud respuesta:', afterThink.length, 'chars');
+        cleaned = afterThink;
+      } else {
+        // Si no hay nada después del </think>, remover el bloque thinking
+        cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');
+      }
+    }
+
+    // Caso 2: Tag <think> huérfano (sin cerrar) - el modelo no terminó de pensar
+    // Esto significa que no hay respuesta útil aún
+    if (cleaned.includes('<think>') && !cleaned.includes('</think>')) {
+      const thinkIndex = cleaned.indexOf('<think>');
+      const beforeThink = cleaned.substring(0, thinkIndex).trim();
+      if (beforeThink.length > 0) {
+        cleaned = beforeThink;
+      } else {
+        // No hay contenido antes del <think>, el modelo solo generó thinking
+        console.warn('[LocalRAG] Modelo no completó thinking - respuesta vacía');
+        cleaned = '[El modelo no completó su razonamiento. Intente nuevamente o use otro modelo.]';
+      }
+    }
+
+    // Remover tags residuales
+    cleaned = cleaned.replace(/<\/?think>/gi, '');
+
+    // ============================================
+    // LIMPIAR FORMATO MARKDOWN
+    // ============================================
     // Remover negritas **texto** -> texto
     cleaned = cleaned.replace(/\*\*([^*]+)\*\*/g, '$1');
 

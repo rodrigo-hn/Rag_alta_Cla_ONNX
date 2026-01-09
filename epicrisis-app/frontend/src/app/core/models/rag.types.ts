@@ -31,7 +31,12 @@ export interface LLMModelConfig {
   id: string;
   name: string;
   size: string;
-  type: 'causal-lm' | 'image-text-to-text' | 'pipeline';
+  // Tipos de modelo:
+  // - 'causal-lm': Modelos de texto estándar (Llama, Granite, SmolLM)
+  // - 'image-text-to-text': Modelos multimodales con visión (Ministral)
+  // - 'text-generation-web': Modelos solo-texto optimizados para WebGPU (Phi-3.5)
+  // - 'pipeline': Fallback usando pipeline genérico
+  type: 'causal-lm' | 'image-text-to-text' | 'text-generation-web' | 'pipeline';
   dtype: DType;
   remoteOnly: boolean;
   wasmOnly: boolean;
@@ -66,11 +71,47 @@ export const LLM_MODELS: LLMModelConfig[] = [
     recommended: true,
     localPath: 'Ministral-3-3B-Instruct-2512-ONNX'
   },
+  {
+    id: 'local/Phi-3.5-mini-instruct-onnx-web',
+    name: 'Phi 3.5 Mini (Local)',
+    size: '~2.2GB',
+    type: 'text-generation-web',
+    dtype: 'q4f16',
+    remoteOnly: false,
+    wasmOnly: false,
+    localPath: 'Phi-3.5-mini-instruct-onnx-web'
+  },
+  {
+    id: 'local/Qwen3-4B-ONNX',
+    name: 'Qwen3 4B (Local) ⭐',
+    size: '~2.8GB',
+    type: 'causal-lm',
+    dtype: 'q4f16',
+    remoteOnly: false,
+    wasmOnly: false,
+    recommended: true,
+    localPath: 'Qwen3-4B-ONNX'
+  },
 
   // ============================================
   // MODELOS REMOTOS (HuggingFace CDN)
   // Transformers.js los descarga y cachea en IndexedDB
   // ============================================
+  // ============================================
+  // QWEN3-4B - Alibaba (Recomendado para calidad)
+  // 4B parámetros, excelente seguimiento de instrucciones
+  // Mejor calidad que Phi-3.5 para texto estructurado
+  // ============================================
+  {
+    id: 'onnx-community/Qwen3-4B-ONNX',
+    name: 'Qwen3 4B (HF) ⭐',
+    size: '~2.8GB',
+    type: 'causal-lm',
+    dtype: 'q4f16',
+    remoteOnly: false,
+    wasmOnly: false,
+    recommended: true
+  },
   {
     id: 'onnx-community/Llama-3.2-1B-Instruct',
     name: 'Llama 3.2 1B Instruct (HF)',
@@ -89,11 +130,16 @@ export const LLM_MODELS: LLMModelConfig[] = [
     remoteOnly: false,
     wasmOnly: false
   },
+  // ============================================
+  // PHI-3.5 MINI - Microsoft (Solo texto, optimizado WebGPU)
+  // Similar a Ministral 3B pero sin capacidades de visión
+  // 3.8B parámetros, 128K contexto, excelente razonamiento
+  // ============================================
   {
     id: 'onnx-community/Phi-3.5-mini-instruct-onnx-web',
     name: 'Phi 3.5 Mini Microsoft (HF)',
     size: '~2.2GB',
-    type: 'causal-lm',
+    type: 'text-generation-web',  // Tipo especial para modelos solo-texto optimizados web
     dtype: 'q4f16',
     remoteOnly: false,
     wasmOnly: false
@@ -206,6 +252,16 @@ export const GENERATION_CONFIGS: Record<string, GenerationConfig> = {
     min_length: 10,
     temperature: 0.3,
     top_p: 0.9,
+    repetition_penalty: 1.1,
+    do_sample: true
+  },
+  // Configuración especial para Qwen3 con modo thinking habilitado
+  // El modelo "piensa" antes de responder, necesita más tokens
+  qwen3_thinking: {
+    max_new_tokens: 2048,  // 1000+ para thinking, 500+ para respuesta
+    min_length: 100,
+    temperature: 0.6,     // Qwen3 usa 0.6 por defecto
+    top_p: 0.95,          // Qwen3 usa 0.95 por defecto
     repetition_penalty: 1.1,
     do_sample: true
   }

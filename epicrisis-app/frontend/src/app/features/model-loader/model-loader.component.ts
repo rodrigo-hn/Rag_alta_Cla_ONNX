@@ -288,15 +288,23 @@ import { environment } from '../../../environments/environment';
       display: flex;
       align-items: center;
       gap: 8px;
+      width: 100%;
+      min-width: 0;
     }
 
     .model-name {
       flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
     }
 
     .model-size {
       font-size: 11px;
       color: #666;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .recommended-icon {
@@ -391,6 +399,16 @@ import { environment } from '../../../environments/environment';
 
     mat-divider {
       margin: 8px 0;
+    }
+
+    /* Hacer el select panel más ancho para mostrar nombres completos */
+    ::ng-deep .mat-mdc-select-panel {
+      min-width: 320px !important;
+      max-width: 400px !important;
+    }
+
+    ::ng-deep .mat-mdc-option {
+      min-height: 42px;
     }
   `]
 })

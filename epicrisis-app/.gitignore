@@ -90,21 +90,21 @@ playwright-report/
 test-report.html
 
 # ============================================================================
-# MODELOS LLM / ML
+# MODELOS LLM / ML / ONNX
 # ============================================================================
-models/llm/*.bin
-models/llm/*.gguf
-models/llm/*.ggml
-models/embeddings/*.bin
-models/embeddings/*.onnx
+# Modelos ONNX descargados (muy grandes para git)
+models/
+
+# Archivos de modelo individuales
+*.bin
+*.gguf
+*.ggml
 *.model
 *.pt
 *.pth
 *.safetensors
-
-# Mantener estructura de directorios
-!models/llm/.gitkeep
-!models/embeddings/.gitkeep
+*.onnx
+*.onnx_data
 
 # ============================================================================
 # CACHE
