@@ -1122,6 +1122,178 @@ export class LocalRAGService {
   }
 
   /**
+   * Construye el prompt MÍNIMO para modelo fine-tuned (v3 template)
+   * El modelo solo genera la narrativa clínica, la app inyecta paciente y controles
+   * Formato de entrada: {"instruction":"Epicrisis:","input":{dx,proc,tto,evo,dx_alta,med},"output":"Ingresa por..."}
+   */
+  buildEpicrisisPromptFineTuned(chunks: Chunk[]): string {
+    // Extraer datos estructurados del contexto
+    const diagnosticos = this.extractDiagnosticos(chunks);
+    const procedimientos = this.extractProcedimientos(chunks);
+    const tratamientosIntrahosp = this.extractTratamientosIntrahosp(chunks);
+    const medicamentosAlta = this.extractMedicamentosAlta(chunks);
+
+    // Extraer evolución resumida
+    const evolucionChunks = chunks.filter(c => c.chunkType === 'evolucion_dia');
+    let evolucionResumen = '';
+    if (evolucionChunks.length > 0) {
+      // Tomar la última evolución como resumen
+      const lastEvo = evolucionChunks[evolucionChunks.length - 1];
+      const textoMatch = lastEvo.text.match(/\[TEXTO\]\s*([\s\S]+?)(?:\[PROFESIONAL\]|$)/);
+      if (textoMatch) {
+        evolucionResumen = textoMatch[1].trim().substring(0, 100);
+      }
+    }
+
+    // Deduplicar medicamentos
+    const medDedupe = this.deduplicateMedicamentos(medicamentosAlta);
+
+    // Construir input JSON mínimo (mismo formato que dataset v3)
+    const inputData: Record<string, any> = {
+      dx: diagnosticos.ingreso.length > 0 ? diagnosticos.ingreso : ['No consignado'],
+      proc: procedimientos,
+      tto: tratamientosIntrahosp,
+      evo: evolucionResumen || 'Favorable',
+      dx_alta: diagnosticos.egreso.length > 0 ? diagnosticos.egreso : diagnosticos.ingreso,
+      med: medDedupe.unique
+    };
+
+    // Formato Alpaca mínimo para modelo fine-tuned
+    const prompt = `Epicrisis:
+${JSON.stringify(inputData)}
+
+`;
+    return prompt;
+  }
+
+  /**
+   * Post-procesa la salida del modelo fine-tuned
+   * Inyecta datos del paciente al inicio y controles al final
+   */
+  postProcessEpicrisisTemplate(
+    modelOutput: string,
+    patientData: { sexo: 'M' | 'F'; edad: number; unidadEdad?: string },
+    chunks: Chunk[]
+  ): string {
+    // Limpiar output del modelo
+    let narrative = this.cleanOutputFormat(modelOutput).trim();
+
+    // Asegurar que empiece correctamente (sin "Paciente" duplicado)
+    if (narrative.toLowerCase().startsWith('paciente')) {
+      // El modelo generó con paciente, extraer solo la narrativa
+      const match = narrative.match(/(?:paciente\s+(?:masculino|femenino)\s+de\s+\d+\s+a[ñn]os?\s+)?(.+)/i);
+      if (match) {
+        narrative = match[1].trim();
+        // Capitalizar primera letra
+        narrative = narrative.charAt(0).toUpperCase() + narrative.slice(1);
+      }
+    }
+
+    // Construir prefijo con datos del paciente
+    const sexoTexto = patientData.sexo === 'M' ? 'masculino' : 'femenino';
+    const unidad = patientData.unidadEdad || 'años';
+    const prefijo = `Paciente ${sexoTexto} de ${patientData.edad} ${unidad} `;
+
+    // Asegurar que la narrativa empiece con minúscula para concatenar correctamente
+    if (narrative.length > 0) {
+      narrative = narrative.charAt(0).toLowerCase() + narrative.slice(1);
+    }
+
+    // Extraer controles del contexto
+    const altaInfo = this.extractControlesYRecomendaciones(chunks);
+    let sufijo = '';
+
+    if (altaInfo.controles.length > 0) {
+      sufijo = ` Control con ${altaInfo.controles.join('; ')}.`;
+    }
+
+    // Concatenar: prefijo + narrativa + sufijo
+    let result = prefijo + narrative;
+
+    // Asegurar que termine con punto antes de agregar controles
+    if (!result.endsWith('.') && !result.endsWith('。')) {
+      result += '.';
+    }
+
+    result += sufijo;
+
+    return result.trim();
+  }
+
+  /**
+   * Genera epicrisis usando modelo fine-tuned (v3 template)
+   * Flujo: prompt mínimo -> modelo -> post-procesamiento con datos del paciente
+   */
+  async generateLocalEpicrisisFineTuned(
+    clinicalData: ClinicalJson,
+    episodeId: string,
+    patientData: { sexo: 'M' | 'F'; edad: number; unidadEdad?: string }
+  ): Promise<LocalEpicrisisResult> {
+    const startTime = Date.now();
+
+    // 1. Indexar datos si no están indexados
+    const chunksCount = this.indexedDB.chunksCount();
+    if (chunksCount === 0) {
+      await this.indexClinicalData(clinicalData, episodeId);
+    }
+
+    // 2. Obtener todos los chunks
+    const allChunks = await this.indexedDB.getAllChunks();
+
+    // 3. Ordenar chunks
+    const sortedChunks = allChunks.sort((a, b) => {
+      const order: Record<string, number> = {
+        'resumen': 0,
+        'evolucion_dia': 1,
+        'laboratorios': 2,
+        'alta': 3
+      };
+      return (order[a.chunkType] || 99) - (order[b.chunkType] || 99);
+    });
+
+    // 4. Validar datos de entrada
+    const inputValidation = this.validateInputData(sortedChunks);
+
+    // 5. Construir prompt mínimo para modelo fine-tuned
+    const prompt = this.buildEpicrisisPromptFineTuned(sortedChunks);
+
+    // 6. Generar texto con modelo fine-tuned
+    const modelOutput = await this.generateText(prompt, GENERATION_CONFIGS['resumen_alta']);
+
+    // 7. Post-procesar: inyectar datos del paciente y controles
+    const text = this.postProcessEpicrisisTemplate(modelOutput, patientData, sortedChunks);
+
+    // 8. Validar output
+    const outputValidation = this.validateOutput(text, sortedChunks);
+
+    // 9. Combinar warnings
+    const allWarnings = [
+      ...inputValidation.warnings.filter(w => w.severity !== 'low'),
+      ...outputValidation.warnings
+    ];
+
+    const combinedValidation: LocalValidationResult = {
+      ok: outputValidation.ok && inputValidation.isValid,
+      warnings: allWarnings,
+      summary: allWarnings.length === 0
+        ? 'Validación correcta'
+        : `${allWarnings.length} advertencia(s) encontrada(s)`
+    };
+
+    const processingTimeMs = Date.now() - startTime;
+    const tokensGenerated = text.split(/\s+/).length;
+    const tokensPerSecond = Math.round(tokensGenerated / (processingTimeMs / 1000));
+
+    return {
+      text,
+      validation: combinedValidation,
+      processingTimeMs,
+      tokensGenerated,
+      tokensPerSecond
+    };
+  }
+
+  /**
    * Construye el prompt para generar epicrisis
    * Usa datos pre-extraídos para reducir alucinaciones del modelo 3B
    */
