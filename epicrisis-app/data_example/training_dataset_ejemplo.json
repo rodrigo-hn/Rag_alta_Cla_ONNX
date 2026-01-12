@@ -1,0 +1,362 @@
+[
+  {
+    "id": 1,
+    "caso": "Neumonia adquirida en comunidad",
+    "instruction": "Transcribe estos datos clinicos en UN SOLO PARRAFO de texto plano. REGLAS: 1. NO inventes datos que no esten listados. 2. NO uses formato: nada de ** negritas **, * cursivas *, [ corchetes ]. 3. Incluye TODOS los codigos entre parentesis simples: (J18.9), (J01CA04). 4. NO inventes deterioro clinico, empeoramiento ni urgencias.",
+    "input": {
+      "paciente": {"sexo": "M", "edad": 72},
+      "motivo_ingreso": "Neumonia adquirida en la comunidad",
+      "diagnostico_ingreso": [
+        {"codigo": "J18.9", "nombre": "Neumonia no especificada"}
+      ],
+      "procedimientos": [],
+      "tratamientos_intrahosp": [
+        {"codigo": "J01DD04", "nombre": "Ceftriaxona 1g EV cada 24 horas", "duracion": "7 dias"}
+      ],
+      "evolucion_resumen": "Paciente evoluciona favorablemente con defervescencia al tercer dia. Mejoria de patron respiratorio. Saturacion sobre 94% con aire ambiental.",
+      "laboratorios_resumen": [
+        {"prueba": "PCR", "ingreso": "15.2 mg/dL", "egreso": "2.1 mg/dL"},
+        {"prueba": "Leucocitos", "ingreso": "18500", "egreso": "8200"}
+      ],
+      "diagnostico_egreso": [
+        {"codigo": "J18.9", "nombre": "Neumonia adquirida en la comunidad resuelta"}
+      ],
+      "indicaciones_alta": {
+        "medicamentos": [
+          {"codigo": "J01CA04", "nombre": "Amoxicilina", "dosis": "500mg", "via": "VO", "frecuencia": "cada 8 horas", "duracion": "5 dias"}
+        ],
+        "controles": ["Control con medico tratante en 7 dias"],
+        "recomendaciones": ["Reposo relativo", "Hidratacion abundante"]
+      }
+    },
+    "output": "Paciente masculino de 72 anos ingresa por neumonia adquirida en la comunidad (J18.9). Durante la hospitalizacion recibio tratamiento con ceftriaxona 1g EV cada 24 horas (J01DD04) por 7 dias, evolucionando favorablemente con defervescencia al tercer dia y mejoria del patron respiratorio, manteniendo saturacion sobre 94% con aire ambiental. Los examenes de laboratorio mostraron descenso de PCR de 15.2 a 2.1 mg/dL y normalizacion de leucocitos de 18500 a 8200. Se da de alta con diagnostico de neumonia adquirida en la comunidad resuelta (J18.9), indicandose amoxicilina 500mg VO cada 8 horas por 5 dias (J01CA04). Se indica reposo relativo e hidratacion abundante. Control con medico tratante en 7 dias."
+  },
+  {
+    "id": 2,
+    "caso": "Colecistitis aguda litiasica",
+    "instruction": "Transcribe estos datos clinicos en UN SOLO PARRAFO de texto plano. REGLAS: 1. NO inventes datos que no esten listados. 2. NO uses formato: nada de ** negritas **, * cursivas *, [ corchetes ]. 3. Incluye TODOS los codigos entre parentesis simples: (J18.9), (J01CA04). 4. NO inventes deterioro clinico, empeoramiento ni urgencias.",
+    "input": {
+      "paciente": {"sexo": "F", "edad": 45},
+      "motivo_ingreso": "Colecistitis aguda litiasica",
+      "diagnostico_ingreso": [
+        {"codigo": "K80.0", "nombre": "Colecistitis aguda con calculo"}
+      ],
+      "procedimientos": [
+        {"codigo": "51.23", "nombre": "Colecistectomia laparoscopica", "fecha": "2025-01-03"}
+      ],
+      "tratamientos_intrahosp": [
+        {"codigo": "J01CR05", "nombre": "Piperacilina/Tazobactam 4.5g EV cada 8 horas", "duracion": "3 dias"}
+      ],
+      "evolucion_resumen": "Paciente ingresa con cuadro de 48 horas de evolucion. Se realiza colecistectomia laparoscopica sin incidentes. Post operatorio sin complicaciones, tolera regimen y deambula.",
+      "laboratorios_resumen": [
+        {"prueba": "Bilirrubina total", "ingreso": "2.1 mg/dL", "egreso": "0.9 mg/dL"},
+        {"prueba": "Leucocitos", "ingreso": "14200", "egreso": "7800"}
+      ],
+      "diagnostico_egreso": [
+        {"codigo": "K80.0", "nombre": "Colecistitis aguda litiasica operada"}
+      ],
+      "indicaciones_alta": {
+        "medicamentos": [
+          {"codigo": "M01AE01", "nombre": "Ibuprofeno", "dosis": "400mg", "via": "VO", "frecuencia": "cada 8 horas", "duracion": "5 dias SOS dolor"}
+        ],
+        "controles": ["Control con cirujano en 10 dias con resultado de biopsia"],
+        "recomendaciones": ["Dieta liviana por 1 semana", "No levantar objetos pesados por 2 semanas"]
+      }
+    },
+    "output": "Paciente femenina de 45 anos ingresa por colecistitis aguda litiasica (K80.0) de 48 horas de evolucion. Se realiza colecistectomia laparoscopica (51.23) el 03 de enero de 2025 sin incidentes. Durante la hospitalizacion recibio piperacilina/tazobactam 4.5g EV cada 8 horas (J01CR05) por 3 dias. Post operatorio evoluciona sin complicaciones, tolerando regimen y deambulando. Los examenes mostraron normalizacion de bilirrubina de 2.1 a 0.9 mg/dL y leucocitos de 14200 a 7800. Se da de alta con diagnostico de colecistitis aguda litiasica operada (K80.0), indicandose ibuprofeno 400mg VO cada 8 horas por 5 dias SOS dolor (M01AE01). Se recomienda dieta liviana por 1 semana y no levantar objetos pesados por 2 semanas. Control con cirujano en 10 dias con resultado de biopsia."
+  },
+  {
+    "id": 3,
+    "caso": "Insuficiencia cardiaca descompensada",
+    "instruction": "Transcribe estos datos clinicos en UN SOLO PARRAFO de texto plano. REGLAS: 1. NO inventes datos que no esten listados. 2. NO uses formato: nada de ** negritas **, * cursivas *, [ corchetes ]. 3. Incluye TODOS los codigos entre parentesis simples: (J18.9), (J01CA04). 4. NO inventes deterioro clinico, empeoramiento ni urgencias.",
+    "input": {
+      "paciente": {"sexo": "M", "edad": 58},
+      "motivo_ingreso": "Insuficiencia cardiaca descompensada",
+      "diagnostico_ingreso": [
+        {"codigo": "I50.9", "nombre": "Insuficiencia cardiaca no especificada"},
+        {"codigo": "I10", "nombre": "Hipertension esencial"}
+      ],
+      "procedimientos": [],
+      "tratamientos_intrahosp": [
+        {"codigo": "C03CA01", "nombre": "Furosemida 40mg EV cada 12 horas", "duracion": "5 dias"},
+        {"codigo": "C07AB07", "nombre": "Bisoprolol 2.5mg VO cada 24 horas", "duracion": "continuo"}
+      ],
+      "evolucion_resumen": "Paciente ingresa con disnea CF III-IV y edema de EEII. Responde a diureticos con balance negativo de 3 litros en primeras 48 horas. Mejoria clinica progresiva.",
+      "laboratorios_resumen": [
+        {"prueba": "BNP", "ingreso": "1850 pg/mL", "egreso": "420 pg/mL"},
+        {"prueba": "Creatinina", "ingreso": "1.4 mg/dL", "egreso": "1.2 mg/dL"}
+      ],
+      "diagnostico_egreso": [
+        {"codigo": "I50.9", "nombre": "Insuficiencia cardiaca compensada"},
+        {"codigo": "I10", "nombre": "Hipertension arterial"}
+      ],
+      "indicaciones_alta": {
+        "medicamentos": [
+          {"codigo": "C03CA01", "nombre": "Furosemida", "dosis": "40mg", "via": "VO", "frecuencia": "cada 12 horas", "duracion": "continuo"},
+          {"codigo": "C07AB07", "nombre": "Bisoprolol", "dosis": "2.5mg", "via": "VO", "frecuencia": "cada 24 horas", "duracion": "continuo"},
+          {"codigo": "C09AA02", "nombre": "Enalapril", "dosis": "10mg", "via": "VO", "frecuencia": "cada 12 horas", "duracion": "continuo"}
+        ],
+        "controles": ["Control con cardiologia en 2 semanas"],
+        "recomendaciones": ["Restriccion de sodio", "Control de peso diario", "Restriccion hidrica a 1.5 litros/dia"]
+      }
+    },
+    "output": "Paciente masculino de 58 anos ingresa por insuficiencia cardiaca descompensada (I50.9) en contexto de hipertension esencial (I10), presentando disnea CF III-IV y edema de extremidades inferiores. Durante la hospitalizacion recibio furosemida 40mg EV cada 12 horas (C03CA01) y bisoprolol 2.5mg VO cada 24 horas (C07AB07), respondiendo favorablemente a diureticos con balance negativo de 3 litros en primeras 48 horas y mejoria clinica progresiva. Los examenes mostraron descenso de BNP de 1850 a 420 pg/mL y creatinina estable de 1.4 a 1.2 mg/dL. Se da de alta con diagnostico de insuficiencia cardiaca compensada (I50.9) e hipertension arterial (I10), indicandose furosemida 40mg VO cada 12 horas (C03CA01), bisoprolol 2.5mg VO cada 24 horas (C07AB07) y enalapril 10mg VO cada 12 horas (C09AA02) de forma continua. Se recomienda restriccion de sodio, control de peso diario y restriccion hidrica a 1.5 litros/dia. Control con cardiologia en 2 semanas."
+  },
+  {
+    "id": 4,
+    "caso": "Fractura de cadera",
+    "instruction": "Transcribe estos datos clinicos en UN SOLO PARRAFO de texto plano. REGLAS: 1. NO inventes datos que no esten listados. 2. NO uses formato: nada de ** negritas **, * cursivas *, [ corchetes ]. 3. Incluye TODOS los codigos entre parentesis simples: (J18.9), (J01CA04). 4. NO inventes deterioro clinico, empeoramiento ni urgencias.",
+    "input": {
+      "paciente": {"sexo": "F", "edad": 82},
+      "motivo_ingreso": "Fractura de cadera derecha por caida",
+      "diagnostico_ingreso": [
+        {"codigo": "S72.0", "nombre": "Fractura de cuello de femur"}
+      ],
+      "procedimientos": [
+        {"codigo": "81.52", "nombre": "Artroplastia parcial de cadera", "fecha": "2025-01-02"}
+      ],
+      "tratamientos_intrahosp": [
+        {"codigo": "B01AB01", "nombre": "Enoxaparina 40mg SC cada 24 horas", "duracion": "durante hospitalizacion"},
+        {"codigo": "N02BE01", "nombre": "Paracetamol 1g EV cada 8 horas", "duracion": "5 dias"}
+      ],
+      "evolucion_resumen": "Paciente ingresa tras caida en domicilio. Se realiza artroplastia parcial de cadera sin complicaciones. Inicia kinesioterapia al segundo dia post operatorio. Logra bipedestacion y marcha con andador.",
+      "laboratorios_resumen": [
+        {"prueba": "Hemoglobina", "ingreso": "10.2 g/dL", "egreso": "9.8 g/dL"},
+        {"prueba": "Creatinina", "ingreso": "0.9 mg/dL", "egreso": "0.85 mg/dL"}
+      ],
+      "diagnostico_egreso": [
+        {"codigo": "S72.0", "nombre": "Fractura de cuello de femur operada"}
+      ],
+      "indicaciones_alta": {
+        "medicamentos": [
+          {"codigo": "B01AB01", "nombre": "Enoxaparina", "dosis": "40mg", "via": "SC", "frecuencia": "cada 24 horas", "duracion": "21 dias"},
+          {"codigo": "N02BE01", "nombre": "Paracetamol", "dosis": "1g", "via": "VO", "frecuencia": "cada 8 horas", "duracion": "SOS dolor"}
+        ],
+        "controles": ["Control con traumatologo en 2 semanas con radiografia de cadera"],
+        "recomendaciones": ["Kinesioterapia domiciliaria", "Marcha con andador", "Prevencion de caidas"]
+      }
+    },
+    "output": "Paciente femenina de 82 anos ingresa por fractura de cuello de femur (S72.0) secundaria a caida en domicilio. Se realiza artroplastia parcial de cadera (81.52) el 02 de enero de 2025 sin complicaciones. Durante la hospitalizacion recibio enoxaparina 40mg SC cada 24 horas (B01AB01) como profilaxis tromboembolica y paracetamol 1g EV cada 8 horas (N02BE01) para manejo del dolor. Inicia kinesioterapia al segundo dia post operatorio, logrando bipedestacion y marcha con andador. Los examenes mostraron hemoglobina estable en 10.2 a 9.8 g/dL y creatinina en 0.9 a 0.85 mg/dL. Se da de alta con diagnostico de fractura de cuello de femur operada (S72.0), indicandose enoxaparina 40mg SC cada 24 horas por 21 dias (B01AB01) y paracetamol 1g VO cada 8 horas SOS dolor (N02BE01). Se indica kinesioterapia domiciliaria, marcha con andador y prevencion de caidas. Control con traumatologo en 2 semanas con radiografia de cadera."
+  },
+  {
+    "id": 5,
+    "caso": "Apendicitis aguda",
+    "instruction": "Transcribe estos datos clinicos en UN SOLO PARRAFO de texto plano. REGLAS: 1. NO inventes datos que no esten listados. 2. NO uses formato: nada de ** negritas **, * cursivas *, [ corchetes ]. 3. Incluye TODOS los codigos entre parentesis simples: (J18.9), (J01CA04). 4. NO inventes deterioro clinico, empeoramiento ni urgencias.",
+    "input": {
+      "paciente": {"sexo": "M", "edad": 35},
+      "motivo_ingreso": "Apendicitis aguda",
+      "diagnostico_ingreso": [
+        {"codigo": "K35.8", "nombre": "Apendicitis aguda no especificada"}
+      ],
+      "procedimientos": [
+        {"codigo": "47.01", "nombre": "Apendicectomia laparoscopica", "fecha": "2025-01-05"}
+      ],
+      "tratamientos_intrahosp": [
+        {"codigo": "J01DD04", "nombre": "Ceftriaxona 1g EV cada 24 horas", "duracion": "2 dias"},
+        {"codigo": "J01XD01", "nombre": "Metronidazol 500mg EV cada 8 horas", "duracion": "2 dias"}
+      ],
+      "evolucion_resumen": "Paciente ingresa con cuadro de dolor abdominal en fosa iliaca derecha de 24 horas de evolucion. Ecografia confirma apendicitis. Se realiza apendicectomia laparoscopica de urgencia. Post operatorio sin complicaciones, tolera alimentacion y deambula.",
+      "laboratorios_resumen": [
+        {"prueba": "Leucocitos", "ingreso": "16800", "egreso": "8500"},
+        {"prueba": "PCR", "ingreso": "8.5 mg/dL", "egreso": "1.8 mg/dL"}
+      ],
+      "diagnostico_egreso": [
+        {"codigo": "K35.8", "nombre": "Apendicitis aguda operada"}
+      ],
+      "indicaciones_alta": {
+        "medicamentos": [
+          {"codigo": "M01AE01", "nombre": "Ibuprofeno", "dosis": "400mg", "via": "VO", "frecuencia": "cada 8 horas", "duracion": "3 dias SOS dolor"}
+        ],
+        "controles": ["Control con cirujano en 7 dias"],
+        "recomendaciones": ["Reposo relativo por 1 semana", "Dieta liviana"]
+      }
+    },
+    "output": "Paciente masculino de 35 anos ingresa por apendicitis aguda (K35.8) con cuadro de dolor abdominal en fosa iliaca derecha de 24 horas de evolucion, confirmado por ecografia. Se realiza apendicectomia laparoscopica de urgencia (47.01) el 05 de enero de 2025. Durante la hospitalizacion recibio ceftriaxona 1g EV cada 24 horas (J01DD04) y metronidazol 500mg EV cada 8 horas (J01XD01) por 2 dias. Post operatorio evoluciona sin complicaciones, tolerando alimentacion y deambulando. Los examenes mostraron descenso de leucocitos de 16800 a 8500 y PCR de 8.5 a 1.8 mg/dL. Se da de alta con diagnostico de apendicitis aguda operada (K35.8), indicandose ibuprofeno 400mg VO cada 8 horas por 3 dias SOS dolor (M01AE01). Se recomienda reposo relativo por 1 semana y dieta liviana. Control con cirujano en 7 dias."
+  },
+  {
+    "id": 6,
+    "caso": "Pielonefritis aguda",
+    "instruction": "Transcribe estos datos clinicos en UN SOLO PARRAFO de texto plano. REGLAS: 1. NO inventes datos que no esten listados. 2. NO uses formato: nada de ** negritas **, * cursivas *, [ corchetes ]. 3. Incluye TODOS los codigos entre parentesis simples: (J18.9), (J01CA04). 4. NO inventes deterioro clinico, empeoramiento ni urgencias.",
+    "input": {
+      "paciente": {"sexo": "F", "edad": 28},
+      "motivo_ingreso": "Pielonefritis aguda",
+      "diagnostico_ingreso": [
+        {"codigo": "N10", "nombre": "Nefritis tubulointersticial aguda"}
+      ],
+      "procedimientos": [],
+      "tratamientos_intrahosp": [
+        {"codigo": "J01MA02", "nombre": "Ciprofloxacino 400mg EV cada 12 horas", "duracion": "3 dias"}
+      ],
+      "evolucion_resumen": "Paciente ingresa con fiebre, dolor lumbar derecho y disuria de 3 dias de evolucion. Urocultivo positivo para E. coli sensible a quinolonas. Evoluciona con cese de fiebre a las 48 horas y mejoria clinica.",
+      "laboratorios_resumen": [
+        {"prueba": "Leucocitos", "ingreso": "15200", "egreso": "7800"},
+        {"prueba": "Creatinina", "ingreso": "1.0 mg/dL", "egreso": "0.8 mg/dL"}
+      ],
+      "diagnostico_egreso": [
+        {"codigo": "N10", "nombre": "Pielonefritis aguda en tratamiento"}
+      ],
+      "indicaciones_alta": {
+        "medicamentos": [
+          {"codigo": "J01MA02", "nombre": "Ciprofloxacino", "dosis": "500mg", "via": "VO", "frecuencia": "cada 12 horas", "duracion": "7 dias"}
+        ],
+        "controles": ["Control con urocultivo de control en 7 dias", "Control con medico tratante en 10 dias"],
+        "recomendaciones": ["Hidratacion abundante", "Consultar si fiebre o dolor lumbar"]
+      }
+    },
+    "output": "Paciente femenina de 28 anos ingresa por pielonefritis aguda (N10) con cuadro de fiebre, dolor lumbar derecho y disuria de 3 dias de evolucion. Urocultivo resulto positivo para E. coli sensible a quinolonas. Durante la hospitalizacion recibio ciprofloxacino 400mg EV cada 12 horas (J01MA02) por 3 dias, evolucionando con cese de fiebre a las 48 horas y mejoria clinica. Los examenes mostraron descenso de leucocitos de 15200 a 7800 y creatinina estable de 1.0 a 0.8 mg/dL. Se da de alta con diagnostico de pielonefritis aguda en tratamiento (N10), indicandose ciprofloxacino 500mg VO cada 12 horas por 7 dias (J01MA02). Se recomienda hidratacion abundante y consultar si presenta fiebre o dolor lumbar. Control con urocultivo de control en 7 dias y con medico tratante en 10 dias."
+  },
+  {
+    "id": 7,
+    "caso": "ACV isquemico",
+    "instruction": "Transcribe estos datos clinicos en UN SOLO PARRAFO de texto plano. REGLAS: 1. NO inventes datos que no esten listados. 2. NO uses formato: nada de ** negritas **, * cursivas *, [ corchetes ]. 3. Incluye TODOS los codigos entre parentesis simples: (J18.9), (J01CA04). 4. NO inventes deterioro clinico, empeoramiento ni urgencias.",
+    "input": {
+      "paciente": {"sexo": "M", "edad": 65},
+      "motivo_ingreso": "Accidente cerebrovascular isquemico",
+      "diagnostico_ingreso": [
+        {"codigo": "I63.9", "nombre": "Infarto cerebral no especificado"},
+        {"codigo": "I10", "nombre": "Hipertension esencial"},
+        {"codigo": "E11.9", "nombre": "Diabetes mellitus tipo 2"}
+      ],
+      "procedimientos": [
+        {"codigo": "88.91", "nombre": "RM de cerebro", "fecha": "2025-01-04"}
+      ],
+      "tratamientos_intrahosp": [
+        {"codigo": "B01AC06", "nombre": "Aspirina 100mg VO cada 24 horas", "duracion": "continuo"},
+        {"codigo": "C10AA05", "nombre": "Atorvastatina 40mg VO cada 24 horas", "duracion": "continuo"}
+      ],
+      "evolucion_resumen": "Paciente ingresa con hemiparesia faciobraquial izquierda de inicio subito. RM confirma infarto en territorio de ACM derecha. Inicia terapia antiagregante y estatinas. Mejoria parcial de deficit motor con kinesioterapia.",
+      "laboratorios_resumen": [
+        {"prueba": "Glicemia", "ingreso": "185 mg/dL", "egreso": "120 mg/dL"},
+        {"prueba": "Colesterol LDL", "ingreso": "145 mg/dL"}
+      ],
+      "diagnostico_egreso": [
+        {"codigo": "I63.9", "nombre": "Infarto cerebral en territorio de ACM derecha"},
+        {"codigo": "I10", "nombre": "Hipertension arterial"},
+        {"codigo": "E11.9", "nombre": "Diabetes mellitus tipo 2"}
+      ],
+      "indicaciones_alta": {
+        "medicamentos": [
+          {"codigo": "B01AC06", "nombre": "Aspirina", "dosis": "100mg", "via": "VO", "frecuencia": "cada 24 horas", "duracion": "continuo"},
+          {"codigo": "C10AA05", "nombre": "Atorvastatina", "dosis": "40mg", "via": "VO", "frecuencia": "cada noche", "duracion": "continuo"},
+          {"codigo": "C09AA02", "nombre": "Enalapril", "dosis": "10mg", "via": "VO", "frecuencia": "cada 12 horas", "duracion": "continuo"}
+        ],
+        "controles": ["Control con neurologia en 1 mes", "Control con medicina interna en 2 semanas"],
+        "recomendaciones": ["Kinesioterapia ambulatoria", "Control estricto de presion arterial y glicemia", "Dieta hiposodica e hipoglucida"]
+      }
+    },
+    "output": "Paciente masculino de 65 anos ingresa por accidente cerebrovascular isquemico (I63.9) presentando hemiparesia faciobraquial izquierda de inicio subito, en contexto de hipertension esencial (I10) y diabetes mellitus tipo 2 (E11.9). RM de cerebro (88.91) realizada el 04 de enero de 2025 confirma infarto en territorio de ACM derecha. Durante la hospitalizacion se inicio aspirina 100mg VO cada 24 horas (B01AC06) y atorvastatina 40mg VO cada 24 horas (C10AA05), evolucionando con mejoria parcial del deficit motor con kinesioterapia. Los examenes mostraron glicemia de ingreso en 185 mg/dL con descenso a 120 mg/dL y colesterol LDL en 145 mg/dL. Se da de alta con diagnostico de infarto cerebral en territorio de ACM derecha (I63.9), hipertension arterial (I10) y diabetes mellitus tipo 2 (E11.9), indicandose aspirina 100mg VO cada 24 horas (B01AC06), atorvastatina 40mg VO cada noche (C10AA05) y enalapril 10mg VO cada 12 horas (C09AA02) de forma continua. Se recomienda kinesioterapia ambulatoria, control estricto de presion arterial y glicemia, y dieta hiposodica e hipoglucida. Control con neurologia en 1 mes y medicina interna en 2 semanas."
+  },
+  {
+    "id": 8,
+    "caso": "Sindrome coronario agudo con stent",
+    "instruction": "Transcribe estos datos clinicos en UN SOLO PARRAFO de texto plano. REGLAS: 1. NO inventes datos que no esten listados. 2. NO uses formato: nada de ** negritas **, * cursivas *, [ corchetes ]. 3. Incluye TODOS los codigos entre parentesis simples: (J18.9), (J01CA04). 4. NO inventes deterioro clinico, empeoramiento ni urgencias.",
+    "input": {
+      "paciente": {"sexo": "F", "edad": 55},
+      "motivo_ingreso": "Dolor toracico en estudio",
+      "diagnostico_ingreso": [
+        {"codigo": "R07.9", "nombre": "Dolor toracico no especificado"},
+        {"codigo": "I25.1", "nombre": "Enfermedad cardiaca aterosclerotica"}
+      ],
+      "procedimientos": [
+        {"codigo": "88.56", "nombre": "Coronariografia", "fecha": "2025-01-06"},
+        {"codigo": "36.06", "nombre": "Angioplastia coronaria con stent", "fecha": "2025-01-06"}
+      ],
+      "tratamientos_intrahosp": [
+        {"codigo": "B01AC04", "nombre": "Clopidogrel 75mg VO cada 24 horas", "duracion": "continuo"},
+        {"codigo": "B01AC06", "nombre": "Aspirina 100mg VO cada 24 horas", "duracion": "continuo"}
+      ],
+      "evolucion_resumen": "Paciente ingresa por dolor toracico opresivo. Coronariografia muestra lesion significativa en DA proximal. Se realiza angioplastia con implante de stent farmacoactivo. Post procedimiento sin complicaciones.",
+      "laboratorios_resumen": [
+        {"prueba": "Troponina I", "ingreso": "0.15 ng/mL", "egreso": "0.08 ng/mL"},
+        {"prueba": "Creatinina", "ingreso": "0.9 mg/dL", "egreso": "1.0 mg/dL"}
+      ],
+      "diagnostico_egreso": [
+        {"codigo": "I25.1", "nombre": "Enfermedad coronaria con stent en DA"}
+      ],
+      "indicaciones_alta": {
+        "medicamentos": [
+          {"codigo": "B01AC04", "nombre": "Clopidogrel", "dosis": "75mg", "via": "VO", "frecuencia": "cada 24 horas", "duracion": "12 meses"},
+          {"codigo": "B01AC06", "nombre": "Aspirina", "dosis": "100mg", "via": "VO", "frecuencia": "cada 24 horas", "duracion": "continuo"},
+          {"codigo": "C10AA05", "nombre": "Atorvastatina", "dosis": "80mg", "via": "VO", "frecuencia": "cada noche", "duracion": "continuo"}
+        ],
+        "controles": ["Control con cardiologia en 1 semana", "Ecocardiograma de control en 1 mes"],
+        "recomendaciones": ["No suspender antiagregacion dual", "Evitar esfuerzos fisicos intensos por 2 semanas"]
+      }
+    },
+    "output": "Paciente femenina de 55 anos ingresa por dolor toracico opresivo (R07.9) en estudio, en contexto de enfermedad cardiaca aterosclerotica (I25.1). Coronariografia (88.56) realizada el 06 de enero de 2025 muestra lesion significativa en DA proximal, realizandose angioplastia coronaria con implante de stent farmacoactivo (36.06) en mismo acto. Durante la hospitalizacion se inicio clopidogrel 75mg VO cada 24 horas (B01AC04) y aspirina 100mg VO cada 24 horas (B01AC06). Post procedimiento evoluciona sin complicaciones. Los examenes mostraron troponina I de 0.15 con descenso a 0.08 ng/mL y creatinina estable en 0.9 a 1.0 mg/dL. Se da de alta con diagnostico de enfermedad coronaria con stent en DA (I25.1), indicandose clopidogrel 75mg VO cada 24 horas por 12 meses (B01AC04), aspirina 100mg VO cada 24 horas continuo (B01AC06) y atorvastatina 80mg VO cada noche continuo (C10AA05). No suspender antiagregacion dual. Evitar esfuerzos fisicos intensos por 2 semanas. Control con cardiologia en 1 semana y ecocardiograma de control en 1 mes."
+  },
+  {
+    "id": 9,
+    "caso": "Pancreatitis aguda biliar",
+    "instruction": "Transcribe estos datos clinicos en UN SOLO PARRAFO de texto plano. REGLAS: 1. NO inventes datos que no esten listados. 2. NO uses formato: nada de ** negritas **, * cursivas *, [ corchetes ]. 3. Incluye TODOS los codigos entre parentesis simples: (J18.9), (J01CA04). 4. NO inventes deterioro clinico, empeoramiento ni urgencias.",
+    "input": {
+      "paciente": {"sexo": "M", "edad": 48},
+      "motivo_ingreso": "Pancreatitis aguda biliar",
+      "diagnostico_ingreso": [
+        {"codigo": "K85.1", "nombre": "Pancreatitis aguda biliar"},
+        {"codigo": "K80.2", "nombre": "Colelitiasis sin colecistitis"}
+      ],
+      "procedimientos": [
+        {"codigo": "51.10", "nombre": "CPRE con papilotomia", "fecha": "2025-01-03"}
+      ],
+      "tratamientos_intrahosp": [
+        {"codigo": "A02BC01", "nombre": "Omeprazol 40mg EV cada 24 horas", "duracion": "5 dias"},
+        {"codigo": "N02BE01", "nombre": "Paracetamol 1g EV cada 8 horas", "duracion": "3 dias"}
+      ],
+      "evolucion_resumen": "Paciente ingresa con dolor abdominal epigastrico irradiado a dorso, lipasa elevada. CPRE muestra coledocolitiasis con extraccion de calculos. Evoluciona favorablemente con descenso de parametros pancreaticos y reinicio de alimentacion al cuarto dia.",
+      "laboratorios_resumen": [
+        {"prueba": "Lipasa", "ingreso": "1850 U/L", "egreso": "120 U/L"},
+        {"prueba": "Bilirrubina total", "ingreso": "3.8 mg/dL", "egreso": "1.2 mg/dL"},
+        {"prueba": "PCR", "ingreso": "12.5 mg/dL", "egreso": "2.8 mg/dL"}
+      ],
+      "diagnostico_egreso": [
+        {"codigo": "K85.1", "nombre": "Pancreatitis aguda biliar resuelta"},
+        {"codigo": "K80.2", "nombre": "Colelitiasis pendiente de colecistectomia"}
+      ],
+      "indicaciones_alta": {
+        "medicamentos": [
+          {"codigo": "A02BC01", "nombre": "Omeprazol", "dosis": "20mg", "via": "VO", "frecuencia": "cada 24 horas", "duracion": "14 dias"}
+        ],
+        "controles": ["Control con gastroenterologia en 2 semanas", "Evaluacion para colecistectomia electiva"],
+        "recomendaciones": ["Dieta baja en grasas", "Evitar alcohol"]
+      }
+    },
+    "output": "Paciente masculino de 48 anos ingresa por pancreatitis aguda biliar (K85.1) con dolor abdominal epigastrico irradiado a dorso y lipasa elevada, en contexto de colelitiasis (K80.2). CPRE con papilotomia (51.10) realizada el 03 de enero de 2025 muestra coledocolitiasis con extraccion de calculos. Durante la hospitalizacion recibio omeprazol 40mg EV cada 24 horas (A02BC01) por 5 dias y paracetamol 1g EV cada 8 horas (N02BE01) por 3 dias. Evoluciona favorablemente con descenso de parametros pancreaticos y reinicio de alimentacion al cuarto dia. Los examenes mostraron descenso de lipasa de 1850 a 120 U/L, bilirrubina total de 3.8 a 1.2 mg/dL y PCR de 12.5 a 2.8 mg/dL. Se da de alta con diagnostico de pancreatitis aguda biliar resuelta (K85.1) y colelitiasis pendiente de colecistectomia (K80.2), indicandose omeprazol 20mg VO cada 24 horas por 14 dias (A02BC01). Se recomienda dieta baja en grasas y evitar alcohol. Control con gastroenterologia en 2 semanas y evaluacion para colecistectomia electiva."
+  },
+  {
+    "id": 10,
+    "caso": "Crisis asmatica severa",
+    "instruction": "Transcribe estos datos clinicos en UN SOLO PARRAFO de texto plano. REGLAS: 1. NO inventes datos que no esten listados. 2. NO uses formato: nada de ** negritas **, * cursivas *, [ corchetes ]. 3. Incluye TODOS los codigos entre parentesis simples: (J18.9), (J01CA04). 4. NO inventes deterioro clinico, empeoramiento ni urgencias.",
+    "input": {
+      "paciente": {"sexo": "F", "edad": 38},
+      "motivo_ingreso": "Crisis asmatica severa",
+      "diagnostico_ingreso": [
+        {"codigo": "J45.9", "nombre": "Asma no especificada"}
+      ],
+      "procedimientos": [],
+      "tratamientos_intrahosp": [
+        {"codigo": "R03AC02", "nombre": "Salbutamol NBZ cada 4 horas", "duracion": "3 dias"},
+        {"codigo": "H02AB06", "nombre": "Prednisona 40mg VO cada 24 horas", "duracion": "5 dias"},
+        {"codigo": "R03BB01", "nombre": "Bromuro de ipratropio NBZ cada 6 horas", "duracion": "3 dias"}
+      ],
+      "evolucion_resumen": "Paciente ingresa con disnea severa, sibilancias difusas y saturacion de 88% con FiO2 ambiental. Requiere oxigeno suplementario por 48 horas. Responde a broncodilatadores y corticoides con mejoria progresiva.",
+      "laboratorios_resumen": [
+        {"prueba": "Saturacion O2", "ingreso": "88%", "egreso": "96%"},
+        {"prueba": "pCO2", "ingreso": "48 mmHg", "egreso": "38 mmHg"}
+      ],
+      "diagnostico_egreso": [
+        {"codigo": "J45.9", "nombre": "Asma bronquial en remision"}
+      ],
+      "indicaciones_alta": {
+        "medicamentos": [
+          {"codigo": "H02AB06", "nombre": "Prednisona", "dosis": "20mg", "via": "VO", "frecuencia": "cada 24 horas", "duracion": "5 dias"},
+          {"codigo": "R03AK06", "nombre": "Salmeterol/Fluticasona", "dosis": "25/250mcg", "via": "INH", "frecuencia": "cada 12 horas", "duracion": "continuo"},
+          {"codigo": "R03AC02", "nombre": "Salbutamol", "dosis": "100mcg", "via": "INH", "frecuencia": "SOS", "duracion": "continuo"}
+        ],
+        "controles": ["Control con broncopulmonar en 2 semanas"],
+        "recomendaciones": ["Evitar alergenos conocidos", "No suspender tratamiento inhalatorio", "Consultar si disnea o uso frecuente de salbutamol"]
+      }
+    },
+    "output": "Paciente femenina de 38 anos ingresa por crisis asmatica severa (J45.9) con disnea severa, sibilancias difusas y saturacion de 88% con FiO2 ambiental, requiriendo oxigeno suplementario por 48 horas. Durante la hospitalizacion recibio salbutamol NBZ cada 4 horas (R03AC02), bromuro de ipratropio NBZ cada 6 horas (R03BB01) por 3 dias y prednisona 40mg VO cada 24 horas (H02AB06) por 5 dias, respondiendo con mejoria progresiva. Los examenes mostraron mejoria de saturacion de 88% a 96% y normalizacion de pCO2 de 48 a 38 mmHg. Se da de alta con diagnostico de asma bronquial en remision (J45.9), indicandose prednisona 20mg VO cada 24 horas por 5 dias (H02AB06), salmeterol/fluticasona 25/250mcg INH cada 12 horas continuo (R03AK06) y salbutamol 100mcg INH SOS (R03AC02). Se recomienda evitar alergenos conocidos, no suspender tratamiento inhalatorio y consultar si presenta disnea o uso frecuente de salbutamol. Control con broncopulmonar en 2 semanas."
+  }
+]
