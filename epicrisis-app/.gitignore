@@ -164,6 +164,34 @@ credentials/
 docker-compose.override.yml
 
 # ============================================================================
+# FINE-TUNING / ML TRAINING
+# ============================================================================
+# Entornos virtuales Python
+fine-tuning/venv/
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Modelos entrenados (muy grandes)
+fine-tuning/epicrisis-model-finetuned/
+fine-tuning/epicrisis-merged/
+fine-tuning/epicrisis-onnx/
+fine-tuning/epicrisis-onnx-q8/
+fine-tuning/*.zip
+
+# Checkpoints de entrenamiento
+fine-tuning/**/checkpoint-*/
+
+# Datasets procesados (mantener solo los originales)
+# fine-tuning/train.jsonl
+# fine-tuning/validation.jsonl
+
+# Hugging Face cache
+.huggingface/
+~/.cache/huggingface/
+
+# ============================================================================
 # OTROS
 # ============================================================================
 *.gz

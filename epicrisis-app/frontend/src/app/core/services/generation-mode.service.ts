@@ -83,7 +83,8 @@ export class GenerationModeService {
   ): Observable<EpicrisisResponse> {
     this.isGenerating.set(true);
 
-    return from(this.localRAG.generateLocalEpicrisis(clinicalData, episodeId)).pipe(
+    // Usar generateEpicrisis que detecta automáticamente si es modelo fine-tuned o estándar
+    return from(this.localRAG.generateEpicrisis(clinicalData, episodeId)).pipe(
       switchMap((result: LocalEpicrisisResult) => {
         this.lastGenerationTimeMs.set(result.processingTimeMs);
         this.lastTokensPerSecond.set(result.tokensPerSecond);

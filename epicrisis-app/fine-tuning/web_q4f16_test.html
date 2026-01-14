@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Q4F16 Browser Test</title>
+    <style>
+      body {
+        font-family: "Georgia", "Times New Roman", serif;
+        margin: 24px;
+        background: #f8f5f0;
+        color: #1a1a1a;
+      }
+      h1 {
+        margin: 0 0 12px 0;
+        font-size: 24px;
+      }
+      label {
+        display: block;
+        margin: 12px 0 6px;
+        font-weight: 600;
+      }
+      textarea {
+        width: 100%;
+        min-height: 80px;
+        padding: 10px;
+        font-family: "Courier New", monospace;
+        font-size: 13px;
+      }
+      button {
+        margin-top: 12px;
+        padding: 10px 16px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      pre {
+        background: #fff;
+        border: 1px solid #ddd;
+        padding: 12px;
+        white-space: pre-wrap;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 800px) {
+        .row { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Q4F16 Browser Test (Transformers.js)</h1>
+
+    <div class="row">
+      <div>
+        <label for="system">System</label>
+        <textarea id="system">Eres un asistente medico experto en epicrisis clinicas en espanol. No traduzcas.</textarea>
+      </div>
+      <div>
+        <label for="user">User</label>
+        <textarea id="user">Epicrisis: {"dx":["J18.9"]}</textarea>
+      </div>
+    </div>
+
+    <button id="run">Run</button>
+
+    <label>Output</label>
+    <pre id="output">Ready.</pre>
+
+    <script type="module" src="./web_q4f16_test.js"></script>
+  </body>
+</html>

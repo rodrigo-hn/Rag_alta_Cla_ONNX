@@ -21,7 +21,7 @@
 // ============================================================================
 
 // Tipo para dtype - puede ser string simple o objeto para dtype mixto por componente
-export type DType = 'q4f16' | 'q4' | 'fp16' | 'q8' | {
+export type DType = 'q4f16' | 'q4' | 'fp16' | 'fp32' | 'q8' | {
   decoder_model_merged?: string;
   embed_tokens?: string;
   vision_encoder?: string;
@@ -45,9 +45,154 @@ export interface LLMModelConfig {
   disabledReason?: string;
   // Configuracion para modelos locales (servidos desde backend)
   localPath?: string;
+  // Configuración para modelos fine-tuned
+  isFineTuned?: boolean;           // true si es un modelo fine-tuned para epicrisis
+  fineTunedConfig?: {
+    // El modelo fine-tuned usa prompt mínimo (solo JSON con dx, proc, tto, evo, dx_alta, med)
+    useMinimalPrompt: boolean;
+    // El output del modelo empieza con "Ingresa por..." y la app inyecta datos del paciente
+    requiresPatientDataInjection: boolean;
+    // El output del modelo no incluye controles, la app los agrega al final
+    requiresControlsInjection: boolean;
+    // Configuración de generación específica para este modelo
+    generationConfigKey?: string;
+  };
 }
 
 export const LLM_MODELS: LLMModelConfig[] = [
+  // ============================================
+  // MODELOS FINE-TUNED PARA EPICRISIS
+  // Entrenados específicamente para generar epicrisis clínicas
+  // Usan prompt mínimo y post-procesamiento con datos del paciente
+  // ============================================
+  {
+    id: 'onnx-community/Qwen2.5-0.5B-Instruct',
+    name: 'Qwen2.5 0.5B Instruct ⭐',
+    size: '~512MB',
+    type: 'causal-lm',
+    dtype: 'q8',
+    remoteOnly: true,  // Cargar desde HuggingFace
+    wasmOnly: false,
+    recommended: true
+  },
+  {
+    id: 'local/qwen2.5-1.5b-fp16',
+    name: 'Qwen2.5 1.5B Base (fp16)',
+    size: '~3GB',
+    type: 'causal-lm',
+    dtype: 'fp16',
+    remoteOnly: false,
+    wasmOnly: false,
+    recommended: false,
+    localPath: 'qwen2.5-1.5b-fp16',
+    disabled: true,
+    disabledReason: 'Modelo demasiado grande para memoria del navegador (3GB)'
+  },
+  {
+    id: 'local/qwen2.5-1.5b-q8',
+    name: 'Qwen2.5 1.5B Base (q8)',
+    size: '~1.5GB',
+    type: 'causal-lm',
+    dtype: 'q8',
+    remoteOnly: false,
+    wasmOnly: true,
+    recommended: false,
+    localPath: 'qwen2.5-1.5b-q8',
+    disabled: true,
+    disabledReason: 'Error de carga ONNX con modelos grandes'
+  },
+  {
+    id: 'local/qwen2.5-1.5b-q4',
+    name: 'Qwen2.5 1.5B Base (q4)',
+    size: '~1.7GB',
+    type: 'causal-lm',
+    dtype: 'q4',
+    remoteOnly: false,
+    wasmOnly: true,
+    recommended: false,
+    localPath: 'qwen2.5-1.5b-q4',
+    disabled: true,
+    disabledReason: 'Error de memoria WASM con modelos q4 grandes'
+  },
+  {
+    id: 'local/epicrisis-q4f16-finetuned',
+    name: 'Epicrisis Fine-tuned 1.5B (q4f16) ⭐',
+    size: '~1.2GB',
+    type: 'causal-lm',
+    dtype: 'q4f16',
+    remoteOnly: false,
+    wasmOnly: false,
+    recommended: true,
+    localPath: 'epicrisis-q4f16-finetuned',
+    isFineTuned: true,
+    fineTunedConfig: {
+      useMinimalPrompt: true,
+      requiresPatientDataInjection: true,
+      requiresControlsInjection: true,
+      generationConfigKey: 'finetuned_epicrisis'
+    }
+  },
+  {
+    id: 'local/epicrisis-fp16-finetuned',
+    name: 'Epicrisis Fine-tuned 1.5B (fp16)',
+    size: '~3.1GB',
+    type: 'causal-lm',
+    dtype: 'fp16',
+    remoteOnly: false,
+    wasmOnly: false,
+    recommended: false,
+    localPath: 'epicrisis-fp16-finetuned',
+    isFineTuned: true,
+    fineTunedConfig: {
+      useMinimalPrompt: true,
+      requiresPatientDataInjection: true,
+      requiresControlsInjection: true,
+      generationConfigKey: 'finetuned_epicrisis'
+    },
+    disabled: true,
+    disabledReason: 'Modelo muy grande para el navegador (3.1GB) - usar q4f16'
+  },
+  {
+    id: 'local/epicrisis-fp32-finetuned',
+    name: 'Epicrisis Fine-tuned 1.5B (fp32)',
+    size: '~5.8GB',
+    type: 'causal-lm',
+    dtype: 'fp32',
+    remoteOnly: false,
+    wasmOnly: false,
+    recommended: false,
+    localPath: 'epicrisis-fp32-finetuned',
+    isFineTuned: true,
+    fineTunedConfig: {
+      useMinimalPrompt: true,
+      requiresPatientDataInjection: true,
+      requiresControlsInjection: true,
+      generationConfigKey: 'finetuned_epicrisis'
+    },
+    disabled: true,
+    disabledReason: 'Modelo muy grande para el navegador (5.8GB) - usar fp16'
+  },
+  {
+    id: 'local/epicrisis-q8-finetuned',
+    name: 'Epicrisis Fine-tuned 1.5B (q8)',
+    size: '~1.7GB',
+    type: 'causal-lm',
+    dtype: 'q8',
+    remoteOnly: false,
+    wasmOnly: false,
+    recommended: false,
+    localPath: 'epicrisis-q8-finetuned',
+    isFineTuned: true,
+    fineTunedConfig: {
+      useMinimalPrompt: true,
+      requiresPatientDataInjection: true,
+      requiresControlsInjection: true,
+      generationConfigKey: 'finetuned_epicrisis'
+    },
+    disabled: true,
+    disabledReason: 'Cuantización q8 corrompe pesos del modelo - usar fp16'
+  },
+
   // ============================================
   // MODELOS LOCALES (servidos desde backend)
   // Requieren: MODEL_SOURCE=local en backend/.env
@@ -262,6 +407,16 @@ export const GENERATION_CONFIGS: Record<string, GenerationConfig> = {
     min_length: 100,
     temperature: 0.6,     // Qwen3 usa 0.6 por defecto
     top_p: 0.95,          // Qwen3 usa 0.95 por defecto
+    repetition_penalty: 1.1,
+    do_sample: true
+  },
+  // Configuración para modelo fine-tuned de epicrisis
+  // El modelo ya está entrenado para el formato, necesita menos tokens y temperatura baja
+  finetuned_epicrisis: {
+    max_new_tokens: 400,   // Output más corto porque el modelo es preciso
+    min_length: 80,
+    temperature: 0.3,      // Baja temperatura para output consistente
+    top_p: 0.9,
     repetition_penalty: 1.1,
     do_sample: true
   }

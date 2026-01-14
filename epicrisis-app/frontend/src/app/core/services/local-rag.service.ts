@@ -101,6 +101,47 @@ export class LocalRAGService {
   }
 
   /**
+   * Verifica si el modelo actual es un modelo fine-tuned
+   */
+  isFineTunedModel(): boolean {
+    return this.currentModelConfig?.isFineTuned === true;
+  }
+
+  /**
+   * Obtiene la configuración del modelo fine-tuned actual (si aplica)
+   */
+  getFineTunedConfig(): LLMModelConfig['fineTunedConfig'] | null {
+    if (!this.currentModelConfig?.isFineTuned) {
+      return null;
+    }
+    return this.currentModelConfig.fineTunedConfig || null;
+  }
+
+  /**
+   * Obtiene la configuración de generación apropiada para el modelo actual
+   */
+  private getGenerationConfigForCurrentModel(defaultConfigKey: string = 'resumen_alta'): GenerationConfig {
+    // Si es modelo fine-tuned con config específica, usarla
+    const fineTunedConfig = this.getFineTunedConfig();
+    if (fineTunedConfig?.generationConfigKey) {
+      const customConfig = GENERATION_CONFIGS[fineTunedConfig.generationConfigKey];
+      if (customConfig) {
+        console.log(`[LocalRAG] Usando config de generación: ${fineTunedConfig.generationConfigKey}`);
+        return customConfig;
+      }
+    }
+
+    // Detectar Qwen3 para usar thinking mode
+    const isQwen3 = this.currentModelConfig?.id?.toLowerCase().includes('qwen3') ||
+                    this.currentModelConfig?.id?.toLowerCase().includes('qwen-3');
+    if (isQwen3) {
+      return GENERATION_CONFIGS['qwen3_thinking'];
+    }
+
+    return GENERATION_CONFIGS[defaultConfigKey];
+  }
+
+  /**
    * Construye la ruta completa para un modelo local
    */
   private getLocalModelPath(modelConfig: LLMModelConfig): string {
@@ -1257,8 +1298,9 @@ ${JSON.stringify(inputData)}
     // 5. Construir prompt mínimo para modelo fine-tuned
     const prompt = this.buildEpicrisisPromptFineTuned(sortedChunks);
 
-    // 6. Generar texto con modelo fine-tuned
-    const modelOutput = await this.generateText(prompt, GENERATION_CONFIGS['resumen_alta']);
+    // 6. Generar texto con modelo fine-tuned usando config específica
+    const generationConfig = this.getGenerationConfigForCurrentModel('finetuned_epicrisis');
+    const modelOutput = await this.generateText(prompt, generationConfig);
 
     // 7. Post-procesar: inyectar datos del paciente y controles
     const text = this.postProcessEpicrisisTemplate(modelOutput, patientData, sortedChunks);
@@ -1475,9 +1517,14 @@ ${JSON.stringify(inputData)}
         // Llama, Granite, SmolLM, Qwen3, etc.
         let formattedPrompt = prompt;
 
-        // Detectar si es Qwen3 para habilitar modo thinking
-        const isQwen3 = this.currentModelConfig?.id?.toLowerCase().includes('qwen3') ||
-                        this.currentModelConfig?.id?.toLowerCase().includes('qwen-3');
+        // Para modelos fine-tuned, usar prompt directo (entrenados con formato Alpaca)
+        const isFineTuned = this.isFineTunedModel();
+
+        // Detectar si es Qwen3 para habilitar modo thinking (solo para modelos no fine-tuned)
+        const isQwen3 = !isFineTuned && (
+          this.currentModelConfig?.id?.toLowerCase().includes('qwen3') ||
+          this.currentModelConfig?.id?.toLowerCase().includes('qwen-3')
+        );
 
         // Configuración ajustada para Qwen3 con thinking
         let effectiveConfig = config;
@@ -1487,9 +1534,15 @@ ${JSON.stringify(inputData)}
           console.log('[LocalRAG] max_new_tokens:', effectiveConfig.max_new_tokens);
         }
 
-        if (this.tokenizer.apply_chat_template) {
+        // Aplicar chat template si el tokenizer lo soporta
+        if (this.tokenizer.apply_chat_template && this.tokenizer.chat_template) {
+          // Para modelos fine-tuned, usar el mismo system prompt que en entrenamiento
+          const systemPrompt = isFineTuned
+            ? 'Eres un asistente médico experto en redacción de epicrisis clínicas en español. Genera texto clínico preciso basado en los datos proporcionados.'
+            : 'Eres un asistente médico experto en redacción de informes clínicos en español. Genera texto clínico preciso y profesional.';
+
           const messages = [
-            { role: 'system', content: 'Eres un asistente médico experto en redacción de informes clínicos en español. Genera texto clínico preciso y profesional.' },
+            { role: 'system', content: systemPrompt },
             { role: 'user', content: prompt }
           ];
 
@@ -1506,10 +1559,34 @@ ${JSON.stringify(inputData)}
           }
 
           formattedPrompt = this.tokenizer.apply_chat_template(messages, templateOptions);
+
+          if (isFineTuned) {
+            console.log('[LocalRAG] Modelo fine-tuned: usando chat_template de Qwen2.5');
+          }
+        } else if (isFineTuned) {
+          // Fallback: si no hay chat template, construir manualmente el formato Qwen
+          console.log('[LocalRAG] Modelo fine-tuned: construyendo formato Qwen manualmente');
+          formattedPrompt = `<|im_start|>system
+Eres un asistente médico experto en redacción de epicrisis clínicas en español. Genera texto clínico preciso basado en los datos proporcionados.<|im_end|>
+<|im_start|>user
+${prompt}<|im_end|>
+<|im_start|>assistant
+`;
         }
 
+        console.log('[LocalRAG] Tokenizando prompt, longitud caracteres:', formattedPrompt.length);
+        console.log('[LocalRAG] Prompt formateado (primeros 500 chars):', formattedPrompt.substring(0, 500));
         const inputs = this.tokenizer(formattedPrompt, { return_tensors: 'pt' });
-        const inputLength = inputs.input_ids.dims.at(-1);
+        console.log('[LocalRAG] Inputs del tokenizer:', inputs);
+        console.log('[LocalRAG] Keys en inputs:', inputs ? Object.keys(inputs) : 'inputs es null/undefined');
+
+        if (!inputs || !inputs.input_ids) {
+          console.error('[LocalRAG] inputs.input_ids es undefined. Prompt usado:', formattedPrompt.substring(0, 200));
+          throw new Error('El tokenizer no retornó input_ids válidos');
+        }
+
+        const inputLength = inputs.input_ids.dims?.at(-1) ?? inputs.input_ids.size ?? 0;
+        console.log('[LocalRAG] Input length (tokens):', inputLength);
 
         const outputs = await this.llm.generate({
           ...inputs,
@@ -1889,9 +1966,54 @@ ${JSON.stringify(inputData)}
   }
 
   /**
-   * Genera epicrisis completa usando RAG local
+   * Método principal para generar epicrisis - detecta automáticamente el tipo de modelo
+   * Si es modelo fine-tuned, usa el flujo especializado con inyección de datos del paciente
+   * Si es modelo estándar, usa el flujo RAG completo
+   */
+  async generateEpicrisis(
+    clinicalData: ClinicalJson,
+    episodeId: string,
+    patientData?: { sexo: 'M' | 'F'; edad: number; unidadEdad?: string }
+  ): Promise<LocalEpicrisisResult> {
+    // DEBUG: Verificar estado del modelo
+    console.log('[LocalRAG] generateEpicrisis - currentModelConfig:', this.currentModelConfig);
+    console.log('[LocalRAG] generateEpicrisis - isFineTuned:', this.currentModelConfig?.isFineTuned);
+
+    // Verificar si el modelo actual es fine-tuned
+    if (this.isFineTunedModel()) {
+      console.log('[LocalRAG] Modelo fine-tuned detectado, usando flujo especializado');
+
+      // Para modelos fine-tuned se requieren datos del paciente
+      if (!patientData) {
+        // Intentar extraer del clinicalData si está disponible
+        patientData = {
+          sexo: (clinicalData as any).sexo || 'M',
+          edad: (clinicalData as any).edad || 0,
+          unidadEdad: (clinicalData as any).unidadEdad || 'años'
+        };
+        console.log('[LocalRAG] Datos del paciente no proporcionados, usando defaults:', patientData);
+      }
+
+      return this.generateLocalEpicrisisFineTuned(clinicalData, episodeId, patientData);
+    }
+
+    // Modelo estándar - usar flujo RAG completo
+    console.log('[LocalRAG] Modelo estándar, usando flujo RAG completo');
+    return this.generateLocalEpicrisisStandard(clinicalData, episodeId);
+  }
+
+  /**
+   * Genera epicrisis completa usando RAG local (para modelos estándar)
+   * Alias para mantener compatibilidad con código existente
    */
   async generateLocalEpicrisis(clinicalData: ClinicalJson, episodeId: string): Promise<LocalEpicrisisResult> {
+    return this.generateLocalEpicrisisStandard(clinicalData, episodeId);
+  }
+
+  /**
+   * Genera epicrisis usando flujo RAG estándar (modelos no fine-tuned)
+   */
+  private async generateLocalEpicrisisStandard(clinicalData: ClinicalJson, episodeId: string): Promise<LocalEpicrisisResult> {
     const startTime = Date.now();
 
     // 1. Indexar datos si no estan indexados
@@ -1927,8 +2049,9 @@ ${JSON.stringify(inputData)}
     // 4. Construir prompt
     const prompt = this.buildEpicrisisPrompt(sortedChunks);
 
-    // 5. Generar texto
-    const text = await this.generateText(prompt, GENERATION_CONFIGS['resumen_alta']);
+    // 5. Generar texto usando config apropiada para el modelo actual
+    const generationConfig = this.getGenerationConfigForCurrentModel('resumen_alta');
+    const text = await this.generateText(prompt, generationConfig);
 
     // 6. Validar output
     const outputValidation = this.validateOutput(text, sortedChunks);

@@ -1,0 +1,12 @@
+{
+    "modes": [
+        "q8"
+    ],
+    "per_channel": false,
+    "reduce_range": false,
+    "block_size": null,
+    "is_symmetric": true,
+    "accuracy_level": null,
+    "quant_type": 1,
+    "op_block_list": null
+}
