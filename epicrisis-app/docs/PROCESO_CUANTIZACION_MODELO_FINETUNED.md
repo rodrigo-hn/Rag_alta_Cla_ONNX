@@ -438,14 +438,40 @@ models/
 
 ---
 
-## 11. Próximos Pasos Recomendados
+## 11. Estado Actual de Implementación
 
-1. **Probar generación de epicrisis** con el modelo q4f16 en el navegador
+### 11.1 Backend con Inferencia Real (Enero 2026)
+
+Se implementó inferencia LLM real en el backend usando `@huggingface/transformers`:
+
+| Componente | Estado | Detalles |
+|------------|--------|----------|
+| Backend Node.js | **Funcional** | Inferencia real con Transformers.js |
+| Modelo en uso | `onnx-community/Qwen2.5-0.5B-Instruct` | q4f16, ~461MB |
+| Tiempo inferencia | ~50-60s (CPU) | Generacion real, no mock |
+| Fallback | Disponible | Modo determinista si falla el modelo |
+
+### 11.2 Archivos Modificados
+
+- `backend/src/services/llmService.ts` - Reescrito con Transformers.js
+- `backend/.env` - Nuevas variables LLM_ONNX_MODEL_PATH, USE_DETERMINISTIC_FALLBACK
+- `backend/package.json` - Agregado @huggingface/transformers
+
+### 11.3 Documentacion Relacionada
+
+Ver **[BACKEND_LLM_INFERENCIA_REAL.md](./BACKEND_LLM_INFERENCIA_REAL.md)** para detalles completos de la implementacion actual.
+
+---
+
+## 12. Proximos Pasos Recomendados
+
+1. ~~**Probar generacion de epicrisis** con el modelo q4f16 en el navegador~~ (Implementado en backend)
 2. **Evaluar calidad** de las epicrisis generadas vs modelo original
-3. **Considerar fine-tuning de modelo más pequeño** (Qwen2.5-0.5B) si se requiere menor tamaño
-4. **Implementar caché de modelo** en IndexedDB para cargas más rápidas
+3. **Integrar modelo fine-tuned** en el backend (actualmente usa modelo base Qwen)
+4. **Optimizar tiempo de inferencia** - considerar GPU o modelo mas pequeno
+5. **Implementar streaming** de respuestas para mejor UX
 
 ---
 
 *Documento generado: Enero 2026*
-*Última actualización: 14/01/2026*
+*Ultima actualizacion: 15/01/2026*
