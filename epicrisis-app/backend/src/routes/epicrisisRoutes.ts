@@ -388,10 +388,15 @@ router.post('/export/word', async (req: Request, res: Response) => {
  * Health check
  */
 router.get('/health', (_req: Request, res: Response) => {
+  const modelInfo = llmService.getModelInfo();
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    llmReady: llmService.isReady()
+    llm: {
+      ready: llmService.isReady(),
+      modelPath: modelInfo.path,
+      fallbackMode: modelInfo.fallbackMode
+    }
   });
 });
 

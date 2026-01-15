@@ -1,12 +1,16 @@
 /**
  * Servicio LLM para generación de epicrisis
- * Utiliza TinyLlama-1.1B-Chat para generación local
+ * Utiliza Transformers.js con ONNX Runtime para inferencia local
  */
 import { ClinicalJson, ValidationViolation } from '../types/clinical.types';
 import { logger } from '../config/logger';
+import path from 'path';
+
+// Importación dinámica de Transformers.js (@huggingface/transformers - ESM module)
+let pipeline: any = null;
 
 // Prompt principal para generación de epicrisis
-const EPICRISIS_PROMPT = `Eres un médico especialista en medicina interna. Genera un informe de alta hospitalaria (epicrisis) en español de Chile, siguiendo este formato EXACTO:
+const EPICRISIS_SYSTEM_PROMPT = `Eres un médico especialista en medicina interna. Genera un informe de alta hospitalaria (epicrisis) en español de Chile, siguiendo este formato EXACTO:
 
 ESTRUCTURA OBLIGATORIA (un solo párrafo corrido):
 - Motivo y diagnóstico de ingreso (incluye código CIE-10 entre paréntesis)
@@ -21,52 +25,108 @@ REGLAS ESTRICTAS:
 3. Incluye SIEMPRE los códigos entre paréntesis para dx, procedimientos y medicamentos
 4. Si falta información, escribe "No consignado"
 5. Escribe en español clínico de Chile
-6. Formato: UN SOLO PÁRRAFO continuo, sin bullets ni saltos de línea
-
-JSON CLÍNICO:
-{{JSON_CLINICO}}`;
+6. Formato: UN SOLO PÁRRAFO continuo, sin bullets ni saltos de línea`;
 
 // Prompt de corrección para regeneración
-const CORRECTION_PROMPT = `Tu texto anterior contiene menciones NO permitidas (alucinaciones) o fuera de la lista blanca.
-
-VIOLACIONES DETECTADAS:
-{{VIOLACIONES}}
+const CORRECTION_SYSTEM_PROMPT = `Tu texto anterior contiene menciones NO permitidas (alucinaciones) o fuera de la lista blanca.
 
 Debes reescribir el informe de alta en 1 solo párrafo CUMPLIENDO:
-- Solo puedes mencionar diagnósticos de esta lista: {{DX_LISTA}}
-- Solo puedes mencionar procedimientos de esta lista: {{PROC_LISTA}}
-- Solo puedes mencionar medicamentos de esta lista: {{MED_LISTA}}
+- Solo puedes mencionar diagnósticos, procedimientos y medicamentos de las listas proporcionadas
+- Si necesitas algo fuera de las listas, escribe "No consignado"
+- Incluye SIEMPRE los códigos entre paréntesis
 
-Si necesitas algo fuera de las listas, escribe "No consignado".
-Incluye SIEMPRE los códigos entre paréntesis.
-
-Reescribe completo el informe usando el mismo JSON.
-
-JSON CLÍNICO:
-{{JSON_CLINICO}}`;
+REGLAS ESTRICTAS: No inventes información. Usa SOLO lo que está en el JSON.`;
 
 export class LlmService {
   private modelPath: string;
   private isModelLoaded: boolean = false;
+  private generator: any = null;
+  private tokenizer: any = null;
+  private useFallback: boolean = false;
+
+  // Configuración de generación
+  private maxNewTokens: number;
+  private temperature: number;
+  private topP: number;
+  private topK: number;
 
   constructor() {
-    this.modelPath = process.env.LLM_MODEL_PATH || '../models/llm/tinyllama-1.1b-chat-q4';
+    // Ruta al modelo ONNX local - debe ser absoluta para Transformers.js
+    const envModelPath = process.env.LLM_ONNX_MODEL_PATH;
+    if (envModelPath) {
+      // Si es ruta relativa, convertirla a absoluta desde el directorio backend
+      this.modelPath = path.isAbsolute(envModelPath)
+        ? envModelPath
+        : path.resolve(__dirname, '../../', envModelPath);
+    } else {
+      this.modelPath = path.resolve(__dirname, '../../../models/onnx-community/Qwen2.5-0.5B-Instruct');
+    }
+
+    // Configuración de inferencia
+    this.maxNewTokens = parseInt(process.env.MAX_TOKENS || '512', 10);
+    this.temperature = parseFloat(process.env.TEMPERATURE || '0.3');
+    this.topP = parseFloat(process.env.TOP_P || '0.9');
+    this.topK = parseInt(process.env.TOP_K || '40', 10);
+
+    // Usar fallback determinista si está configurado
+    this.useFallback = process.env.USE_DETERMINISTIC_FALLBACK === 'true';
   }
 
   /**
-   * Inicializa el modelo LLM
-   * En producción, aquí se cargaría el modelo real
+   * Inicializa el modelo LLM con Transformers.js
    */
   async initialize(): Promise<void> {
-    try {
-      logger.info(`Inicializando modelo LLM desde: ${this.modelPath}`);
-      // En producción: cargar modelo TinyLlama
-      // Aquí usamos una implementación mock para desarrollo
+    if (this.useFallback) {
+      logger.info('[LLM] Modo fallback determinista activado');
       this.isModelLoaded = true;
-      logger.info('Modelo LLM inicializado correctamente');
+      return;
+    }
+
+    try {
+      logger.info(`[LLM] Inicializando modelo desde: ${this.modelPath}`);
+
+      // Importar @huggingface/transformers dinámicamente (versión más reciente)
+      const transformers = await import('@huggingface/transformers');
+      pipeline = transformers.pipeline;
+
+      // Configurar caché
+      const cacheDir = path.resolve(__dirname, '../../../models/.cache');
+
+      logger.info('[LLM] Cargando pipeline de generación de texto...');
+      logger.info('[LLM] El modelo se descargará de HuggingFace si no está en caché');
+      logger.info(`[LLM] Cache dir: ${cacheDir}`);
+
+      // Usar el modelo desde HuggingFace
+      // onnx-community/Qwen2.5-0.5B-Instruct tiene soporte para Transformers.js
+      const modelName = 'onnx-community/Qwen2.5-0.5B-Instruct';
+
+      // Crear pipeline de generación de texto
+      this.generator = await pipeline('text-generation', modelName, {
+        dtype: 'q4f16', // Usar cuantización q4f16 para menor uso de memoria
+        device: 'auto', // Detectar automáticamente (CPU o GPU)
+        cache_dir: cacheDir,
+        progress_callback: (progress: any) => {
+          if (progress.status === 'initiate') {
+            logger.info(`[LLM] Iniciando carga: ${progress.file || progress.name}`);
+          } else if (progress.status === 'progress') {
+            const pct = progress.progress ? Math.round(progress.progress) : 0;
+            if (pct % 20 === 0) { // Log cada 20%
+              logger.info(`[LLM] Cargando: ${progress.file || ''} ${pct}%`);
+            }
+          } else if (progress.status === 'done') {
+            logger.info(`[LLM] Cargado: ${progress.file || progress.name}`);
+          }
+        }
+      });
+
+      this.isModelLoaded = true;
+      logger.info('[LLM] Modelo inicializado correctamente con Transformers.js');
+
     } catch (error) {
-      logger.error('Error inicializando modelo LLM:', error);
-      throw error;
+      logger.error('[LLM] Error inicializando modelo:', error);
+      logger.warn('[LLM] Activando modo fallback determinista');
+      this.useFallback = true;
+      this.isModelLoaded = true;
     }
   }
 
@@ -78,86 +138,89 @@ export class LlmService {
     const metrics: Record<string, number> = {};
 
     logger.info('=== LLM GENERATION START ===');
-    logger.info('[LLM_METRICS] Iniciando generación de epicrisis');
 
-    // 1. Preparación del prompt
-    const promptStartTime = Date.now();
-    const clinicalJsonStr = JSON.stringify(clinicalData, null, 2);
+    // Si estamos en modo fallback, usar generación determinista
+    if (this.useFallback || !this.generator) {
+      logger.info('[LLM] Usando generación determinista (fallback)');
+      const result = this.generateDeterministicEpicrisis(clinicalData);
+      metrics.total_generation_ms = Date.now() - startTime;
+      logger.info(`[LLM] Generación determinista completada en ${metrics.total_generation_ms}ms`);
+      return result;
+    }
 
-    //console.log(clinicalJsonStr);
-//imprimir el contenido del clinicalJsonStr para depuración 
+    try {
+      // 1. Preparación del prompt
+      const promptStartTime = Date.now();
+      const clinicalJsonStr = JSON.stringify(clinicalData, null, 2);
 
-    const prompt = EPICRISIS_PROMPT.replace('{{JSON_CLINICO}}', clinicalJsonStr);
+      // Construir el prompt en formato chat de Qwen
+      const messages = [
+        { role: 'system', content: EPICRISIS_SYSTEM_PROMPT },
+        { role: 'user', content: `Genera la epicrisis para el siguiente paciente:\n\nJSON CLÍNICO:\n${clinicalJsonStr}` }
+      ];
 
-    metrics.prompt_preparation_ms = Date.now() - promptStartTime;
-    metrics.prompt_length = prompt.length;
-    metrics.clinical_json_size = clinicalJsonStr.length;
+      // Aplicar chat template de Qwen
+      const prompt = this.applyChatTemplate(messages);
 
-    logger.info('[LLM_METRICS] Prompt preparado', {
-      time_ms: metrics.prompt_preparation_ms,
-      prompt_length: metrics.prompt_length,
-      json_size: metrics.clinical_json_size
-    });
+      metrics.prompt_preparation_ms = Date.now() - promptStartTime;
+      metrics.prompt_length = prompt.length;
 
-    // 2. Tokenización (simulada en desarrollo)
-    const tokenizeStartTime = Date.now();
-    const estimatedTokens = Math.ceil(prompt.length / 4); // Aproximación: 1 token ≈ 4 caracteres
-    metrics.tokenization_ms = Date.now() - tokenizeStartTime;
-    metrics.estimated_input_tokens = estimatedTokens;
+      logger.info('[LLM] Prompt preparado', {
+        time_ms: metrics.prompt_preparation_ms,
+        prompt_length: metrics.prompt_length
+      });
 
-    logger.info('[LLM_METRICS] Tokenización', {
-      time_ms: metrics.tokenization_ms,
-      estimated_tokens: estimatedTokens,
-      tokens_per_char: estimatedTokens / prompt.length
-    });
+      // 2. Generación con el modelo
+      const inferenceStartTime = Date.now();
 
-    // 3. Generación con el modelo
-    const inferenceStartTime = Date.now();
+      logger.info('[LLM] Ejecutando inferencia con Transformers.js...');
 
-    // En producción: usar el modelo real
-    // const response = await this.callModel(prompt);
+      const output = await this.generator(prompt, {
+        max_new_tokens: this.maxNewTokens,
+        temperature: this.temperature,
+        top_p: this.topP,
+        top_k: this.topK,
+        do_sample: this.temperature > 0,
+        return_full_text: false,
+        pad_token_id: 151645, // EOS token de Qwen
+        eos_token_id: 151645
+      });
 
-    // Implementación determinista para desarrollo
-    logger.info('[LLM_METRICS] Ejecutando inferencia (modo: deterministic)');
-    const epicrisis = this.generateDeterministicEpicrisis(clinicalData);
+      metrics.inference_ms = Date.now() - inferenceStartTime;
 
-    metrics.inference_ms = Date.now() - inferenceStartTime;
-    metrics.output_length = epicrisis.length;
-    metrics.estimated_output_tokens = Math.ceil(epicrisis.length / 4);
-
-    logger.info('[LLM_METRICS] Inferencia completada', {
-      time_ms: metrics.inference_ms,
-      output_length: metrics.output_length,
-      output_tokens: metrics.estimated_output_tokens
-    });
-
-    // 4. Post-procesamiento
-    const postProcessStartTime = Date.now();
-    // Aquí se puede agregar limpieza, formateo, etc.
-    metrics.post_processing_ms = Date.now() - postProcessStartTime;
-
-    // Métricas totales
-    const totalTime = Date.now() - startTime;
-    metrics.total_generation_ms = totalTime;
-    metrics.tokens_per_second = metrics.estimated_output_tokens / (metrics.inference_ms / 1000);
-
-    logger.info('[LLM_METRICS] === GENERACIÓN COMPLETADA ===', {
-      total_time_ms: metrics.total_generation_ms,
-      breakdown: {
-        prompt_prep: `${metrics.prompt_preparation_ms}ms (${((metrics.prompt_preparation_ms/totalTime)*100).toFixed(1)}%)`,
-        tokenization: `${metrics.tokenization_ms}ms (${((metrics.tokenization_ms/totalTime)*100).toFixed(1)}%)`,
-        inference: `${metrics.inference_ms}ms (${((metrics.inference_ms/totalTime)*100).toFixed(1)}%)`,
-        post_processing: `${metrics.post_processing_ms}ms (${((metrics.post_processing_ms/totalTime)*100).toFixed(1)}%)`
-      },
-      performance: {
-        tokens_per_second: metrics.tokens_per_second.toFixed(2),
-        total_tokens: metrics.estimated_input_tokens + metrics.estimated_output_tokens,
-        input_tokens: metrics.estimated_input_tokens,
-        output_tokens: metrics.estimated_output_tokens
+      // Extraer texto generado
+      let generatedText = '';
+      if (Array.isArray(output) && output.length > 0) {
+        generatedText = output[0].generated_text || '';
+      } else if (typeof output === 'string') {
+        generatedText = output;
       }
-    });
 
-    return epicrisis;
+      // Limpiar el texto (remover tokens especiales)
+      generatedText = this.cleanGeneratedText(generatedText);
+
+      metrics.output_length = generatedText.length;
+      metrics.total_generation_ms = Date.now() - startTime;
+
+      logger.info('[LLM] Generación completada', {
+        inference_ms: metrics.inference_ms,
+        total_ms: metrics.total_generation_ms,
+        output_length: metrics.output_length
+      });
+
+      // Si el texto generado está vacío o muy corto, usar fallback
+      if (generatedText.length < 50) {
+        logger.warn('[LLM] Texto generado muy corto, usando fallback determinista');
+        return this.generateDeterministicEpicrisis(clinicalData);
+      }
+
+      return generatedText;
+
+    } catch (error) {
+      logger.error('[LLM] Error durante inferencia:', error);
+      logger.warn('[LLM] Usando fallback determinista debido a error');
+      return this.generateDeterministicEpicrisis(clinicalData);
+    }
   }
 
   /**
@@ -168,120 +231,128 @@ export class LlmService {
     violations: ValidationViolation[]
   ): Promise<string> {
     const startTime = Date.now();
-    const metrics: Record<string, number> = {};
 
-    logger.info('=== LLM REGENERATION START ===');
-    logger.info('[LLM_METRICS] Iniciando regeneración con correcciones', {
-      violations_count: violations.length,
-      violation_types: violations.map(v => v.type)
+    logger.info('[LLM] Regenerando con correcciones', {
+      violations_count: violations.length
     });
 
-    // 1. Preparación de listas blancas
-    const whitelistStartTime = Date.now();
+    // Si estamos en modo fallback, usar generación determinista
+    if (this.useFallback || !this.generator) {
+      return this.generateDeterministicEpicrisis(clinicalData);
+    }
 
-    const violationsText = violations
-      .map((v) => `- ${this.getViolationType(v.type)}: "${v.mention}" (${v.reason})`)
-      .join('\n');
+    try {
+      // Preparar información de violaciones
+      const violationsText = violations
+        .map((v) => `- ${this.getViolationType(v.type)}: "${v.mention}" (${v.reason})`)
+        .join('\n');
 
-    const dxLista = [
-      ...clinicalData.diagnostico_ingreso.map((d) => `${d.nombre} (${d.codigo})`),
-      ...clinicalData.diagnostico_egreso.map((d) => `${d.nombre} (${d.codigo})`)
-    ].join(', ');
+      // Preparar listas blancas
+      const dxLista = [
+        ...clinicalData.diagnostico_ingreso.map((d) => `${d.nombre} (${d.codigo})`),
+        ...clinicalData.diagnostico_egreso.map((d) => `${d.nombre} (${d.codigo})`)
+      ].join(', ');
 
-    const procLista = clinicalData.procedimientos
-      .map((p) => `${p.nombre} (${p.codigo})`)
-      .join(', ');
+      const procLista = clinicalData.procedimientos
+        .map((p) => `${p.nombre} (${p.codigo})`)
+        .join(', ');
 
-    const medLista = [
-      ...clinicalData.tratamientos_intrahosp.map((m) => `${m.nombre} (${m.codigo})`),
-      ...clinicalData.indicaciones_alta.medicamentos.map((m) => `${m.nombre} (${m.codigo})`)
-    ].join(', ');
+      const medLista = [
+        ...clinicalData.tratamientos_intrahosp.map((m) => `${m.nombre} (${m.codigo})`),
+        ...clinicalData.indicaciones_alta.medicamentos.map((m) => `${m.nombre} (${m.codigo})`)
+      ].join(', ');
 
-    metrics.whitelist_preparation_ms = Date.now() - whitelistStartTime;
+      const clinicalJsonStr = JSON.stringify(clinicalData, null, 2);
 
-    logger.info('[LLM_METRICS] Whitelists preparadas', {
-      time_ms: metrics.whitelist_preparation_ms,
-      dx_count: clinicalData.diagnostico_ingreso.length + clinicalData.diagnostico_egreso.length,
-      proc_count: clinicalData.procedimientos.length,
-      med_count: clinicalData.tratamientos_intrahosp.length + clinicalData.indicaciones_alta.medicamentos.length
-    });
+      // Construir prompt de corrección
+      const userMessage = `VIOLACIONES DETECTADAS:
+${violationsText}
 
-    // 2. Construcción del prompt de corrección
-    const promptStartTime = Date.now();
+LISTAS PERMITIDAS:
+- Diagnósticos: ${dxLista || 'No consignado'}
+- Procedimientos: ${procLista || 'No consignado'}
+- Medicamentos: ${medLista || 'No consignado'}
 
-    const prompt = CORRECTION_PROMPT
-      .replace('{{VIOLACIONES}}', violationsText)
-      .replace('{{DX_LISTA}}', dxLista || 'No consignado')
-      .replace('{{PROC_LISTA}}', procLista || 'No consignado')
-      .replace('{{MED_LISTA}}', medLista || 'No consignado')
-      .replace('{{JSON_CLINICO}}', JSON.stringify(clinicalData, null, 2));
+JSON CLÍNICO:
+${clinicalJsonStr}
 
-    metrics.prompt_preparation_ms = Date.now() - promptStartTime;
-    metrics.prompt_length = prompt.length;
+Reescribe la epicrisis completa corrigiendo las violaciones.`;
 
-    logger.info('[LLM_METRICS] Prompt de corrección preparado', {
-      time_ms: metrics.prompt_preparation_ms,
-      prompt_length: metrics.prompt_length,
-      violations_text_length: violationsText.length
-    });
+      const messages = [
+        { role: 'system', content: CORRECTION_SYSTEM_PROMPT },
+        { role: 'user', content: userMessage }
+      ];
 
-    // 3. Tokenización
-    const tokenizeStartTime = Date.now();
-    const estimatedTokens = Math.ceil(prompt.length / 4);
-    metrics.tokenization_ms = Date.now() - tokenizeStartTime;
-    metrics.estimated_input_tokens = estimatedTokens;
+      const prompt = this.applyChatTemplate(messages);
 
-    logger.info('[LLM_METRICS] Tokenización', {
-      time_ms: metrics.tokenization_ms,
-      estimated_tokens: estimatedTokens
-    });
+      // Generar
+      const output = await this.generator(prompt, {
+        max_new_tokens: this.maxNewTokens,
+        temperature: this.temperature,
+        top_p: this.topP,
+        top_k: this.topK,
+        do_sample: this.temperature > 0,
+        return_full_text: false,
+        pad_token_id: 151645,
+        eos_token_id: 151645
+      });
 
-    // 4. Regeneración con el modelo
-    const inferenceStartTime = Date.now();
-
-    // En producción: usar el modelo real
-    // const response = await this.callModel(prompt);
-
-    // Implementación determinista corregida
-    logger.info('[LLM_METRICS] Ejecutando regeneración (modo: deterministic)');
-    const epicrisis = this.generateDeterministicEpicrisis(clinicalData);
-
-    metrics.inference_ms = Date.now() - inferenceStartTime;
-    metrics.output_length = epicrisis.length;
-    metrics.estimated_output_tokens = Math.ceil(epicrisis.length / 4);
-
-    logger.info('[LLM_METRICS] Regeneración completada', {
-      time_ms: metrics.inference_ms,
-      output_length: metrics.output_length,
-      output_tokens: metrics.estimated_output_tokens
-    });
-
-    // Métricas totales
-    const totalTime = Date.now() - startTime;
-    metrics.total_regeneration_ms = totalTime;
-    metrics.tokens_per_second = metrics.estimated_output_tokens / (metrics.inference_ms / 1000);
-
-    logger.info('[LLM_METRICS] === REGENERACIÓN COMPLETADA ===', {
-      total_time_ms: metrics.total_regeneration_ms,
-      breakdown: {
-        whitelist_prep: `${metrics.whitelist_preparation_ms}ms (${((metrics.whitelist_preparation_ms/totalTime)*100).toFixed(1)}%)`,
-        prompt_prep: `${metrics.prompt_preparation_ms}ms (${((metrics.prompt_preparation_ms/totalTime)*100).toFixed(1)}%)`,
-        tokenization: `${metrics.tokenization_ms}ms (${((metrics.tokenization_ms/totalTime)*100).toFixed(1)}%)`,
-        inference: `${metrics.inference_ms}ms (${((metrics.inference_ms/totalTime)*100).toFixed(1)}%)`
-      },
-      performance: {
-        tokens_per_second: metrics.tokens_per_second.toFixed(2),
-        total_tokens: metrics.estimated_input_tokens + metrics.estimated_output_tokens,
-        input_tokens: metrics.estimated_input_tokens,
-        output_tokens: metrics.estimated_output_tokens
+      let generatedText = '';
+      if (Array.isArray(output) && output.length > 0) {
+        generatedText = output[0].generated_text || '';
+      } else if (typeof output === 'string') {
+        generatedText = output;
       }
-    });
 
-    return epicrisis;
+      generatedText = this.cleanGeneratedText(generatedText);
+
+      logger.info('[LLM] Regeneración completada', {
+        total_ms: Date.now() - startTime,
+        output_length: generatedText.length
+      });
+
+      if (generatedText.length < 50) {
+        return this.generateDeterministicEpicrisis(clinicalData);
+      }
+
+      return generatedText;
+
+    } catch (error) {
+      logger.error('[LLM] Error en regeneración:', error);
+      return this.generateDeterministicEpicrisis(clinicalData);
+    }
   }
 
   /**
-   * Genera epicrisis de forma determinista (para desarrollo/testing)
+   * Aplica el chat template de Qwen2.5
+   */
+  private applyChatTemplate(messages: Array<{role: string, content: string}>): string {
+    let prompt = '';
+
+    for (const msg of messages) {
+      prompt += `<|im_start|>${msg.role}\n${msg.content}<|im_end|>\n`;
+    }
+
+    // Agregar el inicio del turno del asistente
+    prompt += '<|im_start|>assistant\n';
+
+    return prompt;
+  }
+
+  /**
+   * Limpia el texto generado de tokens especiales
+   */
+  private cleanGeneratedText(text: string): string {
+    return text
+      .replace(/<\|im_start\|>/g, '')
+      .replace(/<\|im_end\|>/g, '')
+      .replace(/<\|endoftext\|>/g, '')
+      .replace(/assistant\n?/g, '')
+      .trim();
+  }
+
+  /**
+   * Genera epicrisis de forma determinista (para desarrollo/fallback)
    */
   private generateDeterministicEpicrisis(data: ClinicalJson): string {
     const parts: string[] = [];
@@ -413,6 +484,17 @@ export class LlmService {
    */
   isReady(): boolean {
     return this.isModelLoaded;
+  }
+
+  /**
+   * Obtiene información del modelo actual
+   */
+  getModelInfo(): { path: string; loaded: boolean; fallbackMode: boolean } {
+    return {
+      path: this.modelPath,
+      loaded: this.isModelLoaded,
+      fallbackMode: this.useFallback
+    };
   }
 }
 
