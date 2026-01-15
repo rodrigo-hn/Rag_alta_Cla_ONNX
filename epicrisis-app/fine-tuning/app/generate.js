@@ -104,6 +104,20 @@ function normalizeSingleParagraph(text) {
     .trim();
 }
 
+function stripPromptEcho(output, prompt) {
+  const trimmedOutput = output.trim();
+  const trimmedPrompt = prompt.trim();
+  if (!trimmedPrompt) {
+    return trimmedOutput;
+  }
+
+  if (trimmedOutput.startsWith(trimmedPrompt)) {
+    return trimmedOutput.slice(trimmedPrompt.length).trim();
+  }
+
+  return trimmedOutput;
+}
+
 async function getRuntime() {
   if (cachedRuntime) {
     return cachedRuntime;
@@ -117,7 +131,7 @@ async function getRuntime() {
 
 export async function generateEpicrisis(prompt, options = {}) {
   const {
-    maxNewTokens = 64,
+    maxNewTokens = 200,
     eosTokenIds = DEFAULT_EOS_TOKEN_IDS,
     temperature = 0.7,
     topP = 0.9,
@@ -172,5 +186,7 @@ export async function generateEpicrisis(prompt, options = {}) {
   }
 
   const decoded = tokenizer.decode(tokenIds);
-  return normalizeSingleParagraph(decoded.split("<|im_end|>")[0]);
+  const cleaned = decoded.split("<|im_end|>")[0];
+  const withoutEcho = stripPromptEcho(cleaned, prompt);
+  return normalizeSingleParagraph(withoutEcho);
 }

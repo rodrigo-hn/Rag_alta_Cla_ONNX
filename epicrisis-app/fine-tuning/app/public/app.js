@@ -20,7 +20,8 @@ async function handleGenerate() {
 
   const formattedPrompt =
     "Responde en un solo parrafo, sin saltos de linea ni bullets. " +
-    "No uses JSON en la respuesta.\n\n" +
+    "No uses JSON en la respuesta. " +
+    "Incluye un diagnostico de ingreso claro.\n\n" +
     prompt;
 
   button.disabled = true;
