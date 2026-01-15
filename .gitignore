@@ -9,6 +9,8 @@ epicrisis-app/backend/node_modules/
 epicrisis-app/.pnpm-store/
 epicrisis-app/.yarn/
 epicrisis-app/bower_components/
+epicrisis-app/fine-tuning/node_modules/
+
 
 # ============================================================================
 # BUILD / COMPILACIÓN
@@ -51,6 +53,7 @@ epicrisis-app/.env.test.local
 epicrisis-app/.env.production.local
 epicrisis-app/backend/.env
 epicrisis-app/frontend/.env
+epicrisis-app/fine-tuning/.venv-transformersjs-export
 
 # ============================================================================
 # IDE / EDITORES

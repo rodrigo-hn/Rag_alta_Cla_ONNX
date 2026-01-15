@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 env.allowLocalModels = true;
 env.allowRemoteModels = false;
 // Models live at epicrisis-app/models
-const localModelsDir = path.resolve(__dirname, '../../../models');
+const localModelsDir = path.resolve(__dirname, '../models');
 env.localModelPath = localModelsDir;
 
 const args = new Map();
@@ -25,20 +25,23 @@ for (let i = 2; i < process.argv.length; i += 1) {
   }
 }
 
-const modelId = args.get('--model-id') ?? 'epicrisis-q4f16-finetuned';
-const modelFileName = args.get('--model-file-name') ?? 'model_q4f16';
-const dtype = args.get('--dtype') ?? 'q4f16';
+const modelId = args.get('--model-id') ?? 'epicrisis-finetuned-onnx-1';
+const modelFileName = args.get('--model-file-name');
+const dtype = args.get('--dtype') ?? 'fp16';
 const useQwenTemplate = args.has('--qwen-template');
 const promptOverride = args.get('--prompt');
 const systemOverride = args.get('--system');
 const userOverride = args.get('--user');
 const quantized = args.has('--quantized') ? true : args.has('--no-quantized') ? false : false;
 
-const generator = await pipeline('text-generation', modelId, {
+const generatorOpts = {
   dtype,
   quantized,
-  model_file_name: modelFileName,
-});
+};
+if (modelFileName) {
+  generatorOpts.model_file_name = modelFileName;
+}
+const generator = await pipeline('text-generation', modelId, generatorOpts);
 
 const messages = [
   {

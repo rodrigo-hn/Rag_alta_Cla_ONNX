@@ -297,14 +297,18 @@ export class LocalRAGService {
       };
 
       // Determinar si usar backend local o HuggingFace
-      const useLocalBackend = isLocal && this.onnxConfig?.modelSource === 'local';
+      // Usar backend local si:
+      // 1. El modelo tiene localPath Y modelSource es 'local'
+      // 2. O si es un modelo con prefijo 'local/' y modelSource es 'local'
+      const hasLocalPath = !!modelConfig.localPath;
+      const useLocalBackend = hasLocalPath && this.onnxConfig?.modelSource === 'local';
       let modelPath: string;
 
-      if (useLocalBackend && modelConfig.localPath) {
+      if (useLocalBackend) {
         // Cargar desde backend local
         this.configureForLocalBackend();
-        // El modelPath es solo el nombre del directorio (sin prefijo local/)
-        modelPath = modelConfig.localPath;
+        // El modelPath es el localPath del modelo
+        modelPath = modelConfig.localPath!;
         console.log('[LocalRAG] Cargando modelo desde BACKEND LOCAL:', modelPath);
       } else {
         // Cargar desde HuggingFace

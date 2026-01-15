@@ -115,16 +115,30 @@ export const LLM_MODELS: LLMModelConfig[] = [
     disabledReason: 'Error de memoria WASM con modelos q4 grandes'
   },
   {
-    id: 'local/epicrisis-q4f16-finetuned',
-    name: 'Epicrisis Fine-tuned 1.5B (q4f16) ⭐',
-    size: '~1.2GB',
+    id: 'local/Qwen2.5-0.5B-Instruct',
+    name: 'Qwen2.5 0.5B Instruct (q4f16) ⭐',
+    size: '~483MB',
     type: 'causal-lm',
     dtype: 'q4f16',
     remoteOnly: false,
     wasmOnly: false,
     recommended: true,
+    // Usa la misma estructura que HuggingFace, servido desde backend local
+    localPath: 'onnx-community/Qwen2.5-0.5B-Instruct'
+  },
+  {
+    id: 'local/epicrisis-q4f16-finetuned',
+    name: 'Epicrisis Fine-tuned 1.5B (q4f16)',
+    size: '~1.2GB',
+    type: 'causal-lm',
+    dtype: 'q4f16',
+    remoteOnly: false,
+    wasmOnly: false,
+    recommended: false,
     localPath: 'epicrisis-q4f16-finetuned',
     isFineTuned: true,
+    disabled: true,
+    disabledReason: 'Incompatible con Transformers.js (opset 18) - usar Qwen2.5-0.5B-Instruct',
     fineTunedConfig: {
       useMinimalPrompt: true,
       requiresPatientDataInjection: true,
