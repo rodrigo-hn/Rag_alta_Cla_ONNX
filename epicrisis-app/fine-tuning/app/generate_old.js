@@ -97,13 +97,6 @@ function sampleTopP(values, offset, size, temperature, topP) {
   return filtered[filtered.length - 1].index;
 }
 
-function normalizeSingleParagraph(text) {
-  return text
-    .replace(/\s*\n+\s*/g, " ")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-}
-
 async function getRuntime() {
   if (cachedRuntime) {
     return cachedRuntime;
@@ -172,5 +165,5 @@ export async function generateEpicrisis(prompt, options = {}) {
   }
 
   const decoded = tokenizer.decode(tokenIds);
-  return normalizeSingleParagraph(decoded.split("<|im_end|>")[0]);
+  return decoded.split("<|im_end|>")[0];
 }

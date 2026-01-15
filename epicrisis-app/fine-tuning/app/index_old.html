@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Epicrisis ONNX Demo</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <p class="eyebrow">Epicrisis ONNX</p>
+        <h1>Generador clinico local</h1>
+        <p class="subtitle">
+          WebGPU cuando esta disponible, con fallback automatico a CPU.
+        </p>
+      </header>
+
+      <section class="panel">
+        <label class="label" for="prompt">Prompt</label>
+        <textarea
+          id="prompt"
+          rows="8"
+          placeholder="Escribe la solicitud clinica aqui..."
+        ></textarea>
+
+        <div class="controls">
+          <button id="generate" type="button">Generar</button>
+          <div class="status" id="status">Listo</div>
+        </div>
+
+        <label class="label" for="output">Respuesta</label>
+        <pre id="output"></pre>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

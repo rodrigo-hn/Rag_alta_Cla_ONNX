@@ -18,17 +18,12 @@ async function handleGenerate() {
     return;
   }
 
-  const formattedPrompt =
-    "Responde en un solo parrafo, sin saltos de linea ni bullets. " +
-    "No uses JSON en la respuesta.\n\n" +
-    prompt;
-
   button.disabled = true;
   status.textContent = "Generando...";
   output.textContent = "";
 
   try {
-    const text = await generateEpicrisis(formattedPrompt, { maxNewTokens: 96 });
+    const text = await generateEpicrisis(prompt, { maxNewTokens: 96 });
     output.textContent = text;
     status.textContent = "Listo";
   } catch (error) {
