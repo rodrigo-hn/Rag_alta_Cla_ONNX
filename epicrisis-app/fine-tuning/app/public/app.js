@@ -9,6 +9,7 @@ const modelSelect = document.querySelector("#model");
 
 const modelOptions = [
   { label: "FP16 WebGPU (2.9GB) - Mejor calidad", value: "/models/onnx-webgpu-fp16" },
+  { label: "FP16 WebGPU Fine-tuned (948MB) - Experimental", value: "/models/onnx-webgpu-fp16-finetuned" },
   { label: "INT4 WebGPU (test)", value: "/models/onnx-webgpu-int4-qmix-test" },
   { label: "INT4 WebGPU (base)", value: "/models/onnx-webgpu-int4" },
   { label: "INT4 CPU qmix (test)", value: "/models/onnx-cpu-int4-qmix-test" },
@@ -23,9 +24,17 @@ const modelOptions = [
   },
 ];
 
+const SYSTEM_INSTRUCTION =
+  "Genera una epicrisis narrativa en UN SOLO PARRAFO. " +
+  "USA SOLO la informacion del JSON, NO inventes datos. " +
+  "Incluye: diagnostico de ingreso, procedimientos con codigos, evolucion, " +
+  "diagnostico de alta y medicacion de alta con dosis y codigos ATC. " +
+  "Abreviaturas: DA=descendente anterior, CD=coronaria derecha, CX=circunfleja, " +
+  "SDST=supradesnivel ST, IAM=infarto agudo miocardio.";
+
 const starter =
-  "Genera la epicrisis en un solo parrafo, sin bullets.\n\n" +
-  "Epicrisis:\n" +
+  SYSTEM_INSTRUCTION +
+  "\n\nEpicrisis:\n" +
   JSON.stringify(
     {
       dx: ["Angina inestable (I20.0)"],
@@ -93,8 +102,8 @@ async function handleGenerate() {
 
   const formattedPrompt = prompt.includes("Epicrisis:")
     ? prompt
-    : "Genera la epicrisis en un solo parrafo, sin bullets.\n\n" +
-      "Epicrisis:\n" +
+    : SYSTEM_INSTRUCTION +
+      "\n\nEpicrisis:\n" +
       prompt;
   const modelBase = modelSelect.value;
   const isTjs = modelBase.startsWith("tjs:");

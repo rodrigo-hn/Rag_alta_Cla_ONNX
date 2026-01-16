@@ -52,11 +52,15 @@ function argMax(values, offset, size) {
   return maxIndex;
 }
 
-function sampleTopP(values, offset, size, temperature, topP) {
+function sampleTopP(values, offset, size, temperature, topP, recentTokens = [], repetitionPenalty = 1.1) {
   const logits = new Array(size);
   let maxLogit = -Infinity;
   for (let i = 0; i < size; i += 1) {
-    const value = values[offset + i];
+    let value = values[offset + i];
+    // Aplicar repetition penalty a tokens recientes
+    if (recentTokens.includes(i) && repetitionPenalty !== 1.0) {
+      value = value < 0 ? value * repetitionPenalty : value / repetitionPenalty;
+    }
     logits[i] = value;
     if (value > maxLogit) {
       maxLogit = value;
@@ -169,8 +173,9 @@ export async function generateEpicrisis(prompt, options = {}) {
     maxNewTokens = 200,
     minNewTokens = 32,
     eosTokenIds = DEFAULT_EOS_TOKEN_IDS,
-    temperature = 0.7,
-    topP = 0.9,
+    temperature = 0.2,  // Reducido para menos alucinaciones (era 0.7)
+    topP = 0.8,         // Reducido para respuestas más determinísticas (era 0.9)
+    repetitionPenalty = 1.15,  // Penaliza tokens repetidos
     modelBase,
   } = options;
   const { session, tokenizer, modelLayers, kvHeads, headSize, pastType } =
@@ -183,6 +188,7 @@ export async function generateEpicrisis(prompt, options = {}) {
 
   const encoded = tokenizer.encode(prompt);
   const tokenIds = [...encoded.ids];
+  const promptLength = tokenIds.length;
 
   for (let step = 0; step < maxNewTokens; step += 1) {
     const attentionMask = new Array(tokenIds.length).fill(1);
@@ -204,6 +210,10 @@ export async function generateEpicrisis(prompt, options = {}) {
     const logits = results.logits;
     const vocabSize = logits.dims[2];
     const lastOffset = (tokenIds.length - 1) * vocabSize;
+
+    // Tokens generados hasta ahora (sin el prompt)
+    const generatedTokens = tokenIds.slice(promptLength);
+
     let nextTokenId = 0;
     if (temperature === 0 || topP === 0 || topP >= 1) {
       nextTokenId = argMax(logits.data, lastOffset, vocabSize);
@@ -213,7 +223,9 @@ export async function generateEpicrisis(prompt, options = {}) {
         lastOffset,
         vocabSize,
         temperature,
-        topP
+        topP,
+        generatedTokens,
+        repetitionPenalty
       );
     }
 
