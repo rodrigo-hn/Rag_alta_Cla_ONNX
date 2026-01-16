@@ -1,15 +1,88 @@
-import { generateEpicrisis } from "/generate.js";
+import { generateEpicrisis, getEpicrisisBackend } from "/generate.js";
+import { generateEpicrisisTjs, getTjsBackend } from "/tjsGenerate.js";
 
 const promptInput = document.querySelector("#prompt");
 const output = document.querySelector("#output");
 const status = document.querySelector("#status");
 const button = document.querySelector("#generate");
+const modelSelect = document.querySelector("#model");
+
+const modelOptions = [
+  { label: "FP16 WebGPU (2.9GB) - Mejor calidad", value: "/models/onnx-webgpu-fp16" },
+  { label: "INT4 WebGPU (test)", value: "/models/onnx-webgpu-int4-qmix-test" },
+  { label: "INT4 WebGPU (base)", value: "/models/onnx-webgpu-int4" },
+  { label: "INT4 CPU qmix (test)", value: "/models/onnx-cpu-int4-qmix-test" },
+  { label: "INT4 CPU (base)", value: "/models/onnx-cpu-int4" },
+  {
+    label: "Transformers.js Q4F16 (1.1GB)",
+    value: "tjs:epicrisis-q4f16-finetuned-tjs:q4f16",
+  },
+  {
+    label: "Transformers.js Q8 (1.4GB)",
+    value: "tjs:epicrisis-q8-finetuned-tjs:q8",
+  },
+];
 
 const starter =
-  "Paciente masculino de 62 anos con dolor toracico, hipertension y diabetes. " +
-  "Redacta una epicrisis breve con diagnostico, tratamiento y recomendaciones.";
+  "Genera la epicrisis en un solo parrafo, sin bullets.\n\n" +
+  "Epicrisis:\n" +
+  JSON.stringify(
+    {
+      dx: ["Angina inestable (I20.0)"],
+      proc: ["Coronariografia (K492)", "Angioplastia (K493)"],
+      tto: [
+        "Aspirina 300mg carga (B01AC06)",
+        "Enoxaparina 60mg SC c/12h (B01AB05)",
+      ],
+      evo: "SDST V1-V4. Oclusion DA. Angioplastia exitosa con stent.",
+      dx_alta: ["IAM pared anterior (I21.0)"],
+      med: [
+        "Aspirina 100mg VO c/24h (B01AC06)",
+        "Clopidogrel 75mg VO c/24h 12m (B01AC04)",
+      ],
+    },
+    null,
+    2
+  );
 
 promptInput.value = starter;
+
+modelOptions.forEach((option) => {
+  const item = document.createElement("option");
+  item.value = option.value;
+  item.textContent = option.label;
+  modelSelect.appendChild(item);
+});
+modelSelect.value = modelOptions[0].value;
+
+function parseTjsModel(value) {
+  // formato: tjs:modelId:quantType
+  const parts = value.replace("tjs:", "").split(":");
+  return {
+    modelId: parts[0],
+    quantType: parts[1] || "q4f16",
+  };
+}
+
+function refreshBackendStatus() {
+  const modelBase = modelSelect.value;
+  if (modelBase.startsWith("tjs:")) {
+    const { modelId, quantType } = parseTjsModel(modelBase);
+    status.textContent = `Listo (Transformers.js ${quantType}) ${modelId}`;
+    return;
+  }
+
+  getEpicrisisBackend(modelBase)
+    .then((backend) => {
+      status.textContent = `Listo (${backend}) ${modelBase}`;
+    })
+    .catch(() => {
+      status.textContent = "Listo";
+    });
+}
+
+refreshBackendStatus();
+modelSelect.addEventListener("change", refreshBackendStatus);
 
 async function handleGenerate() {
   const prompt = promptInput.value.trim();
@@ -18,20 +91,39 @@ async function handleGenerate() {
     return;
   }
 
-  const formattedPrompt =
-    "Responde en un solo parrafo, sin saltos de linea ni bullets. " +
-    "No uses JSON en la respuesta. " +
-    "Incluye un diagnostico de ingreso claro.\n\n" +
-    prompt;
+  const formattedPrompt = prompt.includes("Epicrisis:")
+    ? prompt
+    : "Genera la epicrisis en un solo parrafo, sin bullets.\n\n" +
+      "Epicrisis:\n" +
+      prompt;
+  const modelBase = modelSelect.value;
+  const isTjs = modelBase.startsWith("tjs:");
 
   button.disabled = true;
   status.textContent = "Generando...";
   output.textContent = "";
 
   try {
-    const text = await generateEpicrisis(formattedPrompt, { maxNewTokens: 96 });
+    let text;
+    let backend;
+    if (isTjs) {
+      const { modelId, quantType } = parseTjsModel(modelBase);
+      text = await generateEpicrisisTjs(formattedPrompt, {
+        maxNewTokens: 200,
+        modelId,
+        quantType,
+      });
+      backend = await getTjsBackend(modelId, quantType);
+    } else {
+      text = await generateEpicrisis(formattedPrompt, {
+        maxNewTokens: 200,
+        minNewTokens: 32,
+        modelBase,
+      });
+      backend = await getEpicrisisBackend(modelBase);
+    }
     output.textContent = text;
-    status.textContent = "Listo";
+    status.textContent = `Listo (${backend}) ${modelBase}`;
   } catch (error) {
     output.textContent = `Error: ${error.message || error}`;
     status.textContent = "Fallo la generacion";

@@ -2,12 +2,12 @@ import * as ort from "/vendor/onnxruntime-web.mjs";
 import { Tokenizer } from "/vendor/tokenizers.mjs";
 import { loadEpicrisisModel } from "/modelLoader.js";
 
-const MODEL_LAYERS = 24;
-const KV_HEADS = 2;
-const HEAD_SIZE = 64;
+const DEFAULT_MODEL_LAYERS = 24;
+const DEFAULT_KV_HEADS = 2;
+const DEFAULT_HEAD_SIZE = 64;
 const DEFAULT_EOS_TOKEN_IDS = new Set([151645, 151643]);
 
-let cachedRuntime = null;
+const runtimeCache = new Map();
 
 async function loadTokenizer(base) {
   const [tokenizerJson, tokenizerConfig] = await Promise.all([
@@ -18,20 +18,22 @@ async function loadTokenizer(base) {
   return new Tokenizer(tokenizerJson, tokenizerConfig);
 }
 
-function buildEmptyPastFeeds() {
+function buildEmptyPastFeeds(layerCount, pastType, kvHeads, headSize) {
   const useFloat16 =
     typeof Float16Array !== "undefined" ? Float16Array : Uint16Array;
+  const type = pastType === "float" ? "float32" : "float16";
+  const arrayCtor = pastType === "float" ? Float32Array : useFloat16;
   const feeds = {};
-  for (let i = 0; i < MODEL_LAYERS; i += 1) {
+  for (let i = 0; i < layerCount; i += 1) {
     feeds[`past_key_values.${i}.key`] = new ort.Tensor(
-      "float16",
-      new useFloat16(0),
-      [1, KV_HEADS, 0, HEAD_SIZE]
+      type,
+      new arrayCtor(0),
+      [1, kvHeads, 0, headSize]
     );
     feeds[`past_key_values.${i}.value`] = new ort.Tensor(
-      "float16",
-      new useFloat16(0),
-      [1, KV_HEADS, 0, HEAD_SIZE]
+      type,
+      new arrayCtor(0),
+      [1, kvHeads, 0, headSize]
     );
   }
   return feeds;
@@ -104,6 +106,14 @@ function normalizeSingleParagraph(text) {
     .trim();
 }
 
+function stripSpecialTokens(text) {
+  return text.replace(/<\|endoftext\|>/g, "").trim();
+}
+
+function stripHtml(text) {
+  return text.replace(/<[^>]+>/g, " ").replace(/\s{2,}/g, " ").trim();
+}
+
 function stripPromptEcho(output, prompt) {
   const trimmedOutput = output.trim();
   const trimmedPrompt = prompt.trim();
@@ -118,25 +128,53 @@ function stripPromptEcho(output, prompt) {
   return trimmedOutput;
 }
 
-async function getRuntime() {
-  if (cachedRuntime) {
-    return cachedRuntime;
+async function getRuntime(modelBase) {
+  if (runtimeCache.has(modelBase)) {
+    return runtimeCache.get(modelBase);
   }
 
-  const runtime = await loadEpicrisisModel();
+  const runtime = await loadEpicrisisModel(modelBase);
   const tokenizer = await loadTokenizer(runtime.base);
-  cachedRuntime = { ...runtime, tokenizer };
+  let modelLayers = DEFAULT_MODEL_LAYERS;
+  let kvHeads = DEFAULT_KV_HEADS;
+  let headSize = DEFAULT_HEAD_SIZE;
+  let pastType = "float16";
+  try {
+    const genaiConfig = await fetch(`${runtime.base}/genai_config.json`).then(
+      (res) => res.json()
+    );
+    modelLayers = genaiConfig?.model?.decoder?.num_hidden_layers ?? modelLayers;
+    kvHeads = genaiConfig?.model?.decoder?.num_key_value_heads ?? kvHeads;
+    headSize = genaiConfig?.model?.decoder?.head_size ?? headSize;
+  } catch (error) {
+    modelLayers = DEFAULT_MODEL_LAYERS;
+  }
+  if (runtime.base.includes("onnx-cpu-int4-qmix")) {
+    pastType = "float";
+  }
+  const cachedRuntime = {
+    ...runtime,
+    tokenizer,
+    modelLayers,
+    kvHeads,
+    headSize,
+    pastType,
+  };
+  runtimeCache.set(modelBase ?? runtime.base, cachedRuntime);
   return cachedRuntime;
 }
 
 export async function generateEpicrisis(prompt, options = {}) {
   const {
     maxNewTokens = 200,
+    minNewTokens = 32,
     eosTokenIds = DEFAULT_EOS_TOKEN_IDS,
     temperature = 0.7,
     topP = 0.9,
+    modelBase,
   } = options;
-  const { session, tokenizer } = await getRuntime();
+  const { session, tokenizer, modelLayers, kvHeads, headSize, pastType } =
+    await getRuntime(modelBase);
   const imEndTokenId = tokenizer.token_to_id("<|im_end|>");
   const stopTokenIds = new Set(eosTokenIds);
   if (typeof imEndTokenId === "number") {
@@ -159,7 +197,7 @@ export async function generateEpicrisis(prompt, options = {}) {
         BigInt64Array.from(attentionMask, BigInt),
         [1, attentionMask.length]
       ),
-      ...buildEmptyPastFeeds(),
+      ...buildEmptyPastFeeds(modelLayers, pastType, kvHeads, headSize),
     };
 
     const results = await session.run(feeds);
@@ -180,7 +218,7 @@ export async function generateEpicrisis(prompt, options = {}) {
     }
 
     tokenIds.push(nextTokenId);
-    if (stopTokenIds.has(nextTokenId)) {
+    if (stopTokenIds.has(nextTokenId) && step + 1 >= minNewTokens) {
       break;
     }
   }
@@ -188,5 +226,12 @@ export async function generateEpicrisis(prompt, options = {}) {
   const decoded = tokenizer.decode(tokenIds);
   const cleaned = decoded.split("<|im_end|>")[0];
   const withoutEcho = stripPromptEcho(cleaned, prompt);
-  return normalizeSingleParagraph(withoutEcho);
+  const withoutTokens = stripSpecialTokens(withoutEcho);
+  const withoutHtml = stripHtml(withoutTokens);
+  return normalizeSingleParagraph(withoutHtml);
+}
+
+export async function getEpicrisisBackend(modelBase) {
+  const runtime = await getRuntime(modelBase);
+  return runtime.useWebGPU ? "WebGPU" : "WASM";
 }

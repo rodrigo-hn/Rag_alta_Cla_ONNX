@@ -13,16 +13,14 @@ async function hasWebGPU() {
   }
 }
 
-export async function loadEpicrisisModel() {
-  const useWebGPU = await hasWebGPU();
-  const base = useWebGPU
-    ? "/models/onnx-webgpu-int4"
-    : "/models/onnx-cpu-int4";
+export async function loadEpicrisisModel(baseOverride) {
+  const base = baseOverride ?? "/models/onnx-webgpu-int4-qmix-test";
+  const useWebGPU = base.includes("webgpu");
 
   ort.env.wasm.wasmPaths = "/ort/";
 
   const session = await ort.InferenceSession.create(`${base}/model.onnx`, {
-    executionProviders: useWebGPU ? ["webgpu"] : ["wasm"],
+    executionProviders: [useWebGPU ? "webgpu" : "wasm"],
     externalData: [
       {
         path: "model.onnx.data",

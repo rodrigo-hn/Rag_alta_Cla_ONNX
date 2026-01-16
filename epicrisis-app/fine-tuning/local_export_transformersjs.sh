@@ -27,14 +27,19 @@ python -m pip install --upgrade pip >/dev/null
 # Dependencias en versiones conocidas
 python -m pip install -q \
   "torch>=2.2" \
-  "optimum[exporters]==1.23.3" \
   "transformers==4.45.2" \
-  "onnx" \
   "onnxruntime==1.20.1" \
-  "onnxslim" \
-  "onnxscript" \
   "protobuf<5" \
   "accelerate"
+
+# Usar wheel precompilado de ONNX (evita build local).
+python -m pip install -q --prefer-binary "onnx==1.16.1"
+
+# Evitar conflicto del resolver instalando Optimum con --no-deps.
+python -m pip install -q --no-deps "optimum[exporters]==1.23.3"
+
+# onnxslim/onnxscript tienen conflictos con onnx antiguo; instalar sin deps.
+python -m pip install -q --no-deps "onnxslim" "onnxscript"
 
 # Parchear cleanup en Optimum para evitar FileNotFoundError de .onnx.data
 python - <<'PY'
@@ -159,11 +164,16 @@ OUTPUT_DIR="$OUTPUT_DIR" python - <<'PY'
 import json
 import os
 from pathlib import Path
+import onnx
 
 out_dir = Path(os.environ["OUTPUT_DIR"])
 onnx_dir = out_dir / "onnx"
 use_ext = {}
 for f in onnx_dir.glob("*.onnx"):
+    model = onnx.load(str(f))
+    if model.ir_version > 8:
+        model.ir_version = 8
+        onnx.save(model, str(f))
     if (onnx_dir / f"{f.name}_data").exists():
         use_ext[f.name] = 1
 
