@@ -8,24 +8,7 @@ const button = document.querySelector("#generate");
 const modelSelect = document.querySelector("#model");
 
 const modelOptions = [
-  { label: "🆕 Unsloth Fine-tuned ChatML (948MB)", value: "/models/onnx-webgpu-fp16-unsloth-genai", useChatML: true },
-  { label: "FP16 WebGPU (2.9GB) - Mejor calidad", value: "/models/onnx-webgpu-fp16", useChatML: false },
-  { label: "FP16 ChatML Fine-tuned (948MB)", value: "/models/onnx-webgpu-fp16-finetuned-chatml", useChatML: true },
-  { label: "FP16 Fine-tuned (948MB) - Legacy", value: "/models/onnx-webgpu-fp16-finetuned", useChatML: false },
-  { label: "INT4 WebGPU (test)", value: "/models/onnx-webgpu-int4-qmix-test", useChatML: false },
-  { label: "INT4 WebGPU (base)", value: "/models/onnx-webgpu-int4", useChatML: false },
-  { label: "INT4 CPU qmix (test)", value: "/models/onnx-cpu-int4-qmix-test", useChatML: false },
-  { label: "INT4 CPU (base)", value: "/models/onnx-cpu-int4", useChatML: false },
-  {
-    label: "Transformers.js Q4F16 (1.1GB)",
-    value: "tjs:epicrisis-q4f16-finetuned-tjs:q4f16",
-    useChatML: false,
-  },
-  {
-    label: "Transformers.js Q8 (1.4GB)",
-    value: "tjs:epicrisis-q8-finetuned-tjs:q8",
-    useChatML: false,
-  },
+  { label: "⭐ ChatML v3 ORT-GenAI (959MB) - Funcional", value: "/models/onnx-webgpu-fp16-chatml-v3", useChatML: true },
 ];
 
 const SYSTEM_INSTRUCTION =
