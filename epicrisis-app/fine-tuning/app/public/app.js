@@ -8,7 +8,8 @@ const button = document.querySelector("#generate");
 const modelSelect = document.querySelector("#model");
 
 const modelOptions = [
-  { label: "⭐ ChatML v3 ORT-GenAI (959MB) - Funcional", value: "/models/onnx-webgpu-fp16-chatml-v3", useChatML: true },
+  { label: "⭐ Unsloth FP16 GenAI (948MB) - Recomendado", value: "/models/onnx-webgpu-fp16-unsloth-genai", useChatML: true },
+  { label: "ChatML v3 ORT-GenAI (959MB)", value: "/models/onnx-webgpu-fp16-chatml-v3", useChatML: true },
 ];
 
 const SYSTEM_INSTRUCTION =
