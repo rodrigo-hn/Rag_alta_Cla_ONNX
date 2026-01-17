@@ -8,27 +8,34 @@ const button = document.querySelector("#generate");
 const modelSelect = document.querySelector("#model");
 
 const modelOptions = [
-  { label: "FP16 WebGPU (2.9GB) - Mejor calidad", value: "/models/onnx-webgpu-fp16" },
-  { label: "FP16 WebGPU Fine-tuned (948MB) - Experimental", value: "/models/onnx-webgpu-fp16-finetuned" },
-  { label: "INT4 WebGPU (test)", value: "/models/onnx-webgpu-int4-qmix-test" },
-  { label: "INT4 WebGPU (base)", value: "/models/onnx-webgpu-int4" },
-  { label: "INT4 CPU qmix (test)", value: "/models/onnx-cpu-int4-qmix-test" },
-  { label: "INT4 CPU (base)", value: "/models/onnx-cpu-int4" },
+  { label: "🆕 Unsloth Fine-tuned ChatML (948MB)", value: "/models/onnx-webgpu-fp16-unsloth-genai", useChatML: true },
+  { label: "FP16 WebGPU (2.9GB) - Mejor calidad", value: "/models/onnx-webgpu-fp16", useChatML: false },
+  { label: "FP16 ChatML Fine-tuned (948MB)", value: "/models/onnx-webgpu-fp16-finetuned-chatml", useChatML: true },
+  { label: "FP16 Fine-tuned (948MB) - Legacy", value: "/models/onnx-webgpu-fp16-finetuned", useChatML: false },
+  { label: "INT4 WebGPU (test)", value: "/models/onnx-webgpu-int4-qmix-test", useChatML: false },
+  { label: "INT4 WebGPU (base)", value: "/models/onnx-webgpu-int4", useChatML: false },
+  { label: "INT4 CPU qmix (test)", value: "/models/onnx-cpu-int4-qmix-test", useChatML: false },
+  { label: "INT4 CPU (base)", value: "/models/onnx-cpu-int4", useChatML: false },
   {
     label: "Transformers.js Q4F16 (1.1GB)",
     value: "tjs:epicrisis-q4f16-finetuned-tjs:q4f16",
+    useChatML: false,
   },
   {
     label: "Transformers.js Q8 (1.4GB)",
     value: "tjs:epicrisis-q8-finetuned-tjs:q8",
+    useChatML: false,
   },
 ];
 
 const SYSTEM_INSTRUCTION =
   "Genera una epicrisis narrativa en UN SOLO PARRAFO. " +
   "USA SOLO la informacion del JSON, NO inventes datos. " +
-  "Incluye: diagnostico de ingreso, procedimientos con codigos, evolucion, " +
-  "diagnostico de alta y medicacion de alta con dosis y codigos ATC. " +
+  "IMPORTANTE: Incluye TODOS los codigos entre parentesis: " +
+  "diagnostico de ingreso con codigo CIE-10 (ej: I20.0), " +
+  "procedimientos con codigo K (ej: K492, K493), " +
+  "medicacion con dosis y codigo ATC (ej: B01AC06). " +
+  "Estructura: dx ingreso -> procedimientos -> evolucion -> dx alta -> medicacion alta. " +
   "Abreviaturas: DA=descendente anterior, CD=coronaria derecha, CX=circunfleja, " +
   "SDST=supradesnivel ST, IAM=infarto agudo miocardio.";
 
@@ -108,8 +115,12 @@ async function handleGenerate() {
   const modelBase = modelSelect.value;
   const isTjs = modelBase.startsWith("tjs:");
 
+  // Buscar configuración del modelo seleccionado
+  const modelConfig = modelOptions.find((opt) => opt.value === modelBase) || {};
+  const useChatML = modelConfig.useChatML || false;
+
   button.disabled = true;
-  status.textContent = "Generando...";
+  status.textContent = useChatML ? "Generando (ChatML)..." : "Generando...";
   output.textContent = "";
 
   try {
@@ -125,14 +136,17 @@ async function handleGenerate() {
       backend = await getTjsBackend(modelId, quantType);
     } else {
       text = await generateEpicrisis(formattedPrompt, {
-        maxNewTokens: 200,
-        minNewTokens: 32,
+        maxNewTokens: 300,
+        minNewTokens: useChatML ? 120 : 32,  // ChatML fine-tuned necesita más tokens
         modelBase,
+        useChatML,
+        systemPrompt: SYSTEM_INSTRUCTION,
       });
       backend = await getEpicrisisBackend(modelBase);
     }
     output.textContent = text;
-    status.textContent = `Listo (${backend}) ${modelBase}`;
+    const chatMLIndicator = useChatML ? " [ChatML]" : "";
+    status.textContent = `Listo (${backend})${chatMLIndicator} ${modelBase}`;
   } catch (error) {
     output.textContent = `Error: ${error.message || error}`;
     status.textContent = "Fallo la generacion";

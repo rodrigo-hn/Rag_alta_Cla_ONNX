@@ -180,6 +180,21 @@ fine-tuning/epicrisis-onnx/
 fine-tuning/epicrisis-onnx-q8/
 fine-tuning/*.zip
 
+# MLX merged models
+fine-tuning/mlx_merged/
+fine-tuning/mlx_adapters/
+
+# ONNX output models (muy grandes ~1GB cada uno)
+fine-tuning/outputs/onnx-webgpu-fp16-chatml-v2/
+fine-tuning/outputs/onnx-webgpu-fp16-chatml-v3/
+fine-tuning/outputs/onnx-webgpu-fp16-finetuned-chatml/
+
+# Transformers.js repo (cloned for conversion)
+fine-tuning/transformers-js-repo/
+
+# Model data files
+*.onnx.data
+
 # Checkpoints de entrenamiento
 fine-tuning/**/checkpoint-*/
 

@@ -23,7 +23,7 @@ from pathlib import Path
 
 
 def prepare_datasets():
-    """Combina los datasets y los prepara en formato ChatML para MLX."""
+    """Combina los datasets y los prepara en formato ChatML completo para MLX."""
     datasets_dir = Path(__file__).parent / "datasets"
     output_dir = Path(__file__).parent / "mlx_data"
     output_dir.mkdir(exist_ok=True)
@@ -33,6 +33,9 @@ def prepare_datasets():
         "anatomia_coronaria.jsonl",
         "codigos_correctos.jsonl",
         "ejemplos_negativos.jsonl",
+        "dataset_extra_1.jsonl",
+        "dataset_extra_2.jsonl",
+        "dataset_extra_3.jsonl",
     ]
 
     # Dataset original de entrenamiento
@@ -58,38 +61,43 @@ def prepare_datasets():
                 for line in f:
                     if line.strip():
                         example = json.loads(line)
-                        # Remover campo negative_note si existe
+                        # Remover campos extra
                         example.pop("negative_note", None)
+                        example.pop("instruction", None)
                         all_examples.append(example)
                         count += 1
             print(f"Cargados {count} ejemplos de {dataset_file}")
 
     print(f"\nTotal de ejemplos: {len(all_examples)}")
 
-    # Convertir a formato de texto plano (completions) para MLX
-    # Esto es compatible con cómo la app envía los prompts al modelo ONNX
-    text_examples = []
+    # System instruction actualizada (igual que en app.js)
+    system_instruction = (
+        "Genera una epicrisis narrativa en UN SOLO PARRAFO. "
+        "USA SOLO la informacion del JSON, NO inventes datos. "
+        "IMPORTANTE: Incluye TODOS los codigos entre parentesis: "
+        "diagnostico de ingreso con codigo CIE-10 (ej: I20.0), "
+        "procedimientos con codigo K (ej: K492, K493), "
+        "medicacion con dosis y codigo ATC (ej: B01AC06). "
+        "Estructura: dx ingreso -> procedimientos -> evolucion -> dx alta -> medicacion alta. "
+        "Abreviaturas: DA=descendente anterior, CD=coronaria derecha, CX=circunfleja, "
+        "SDST=supradesnivel ST, IAM=infarto agudo miocardio."
+    )
+
+    # Convertir a formato ChatML completo para Qwen2.5-Instruct
+    chatml_examples = []
     for example in all_examples:
-        # Construir el prompt exactamente como lo hace la app
-        system_instruction = (
-            "Genera una epicrisis narrativa en UN SOLO PARRAFO. "
-            "USA SOLO la informacion del JSON, NO inventes datos. "
-            "Incluye: diagnostico de ingreso, procedimientos con codigos, evolucion, "
-            "diagnostico de alta y medicacion de alta con dosis y codigos ATC. "
-            "Abreviaturas: DA=descendente anterior, CD=coronaria derecha, CX=circunfleja, "
-            "SDST=supradesnivel ST, IAM=infarto agudo miocardio."
+        input_data = example.get("input", {})
+        output_text = example.get("output", "")
+        json_str = json.dumps(input_data, ensure_ascii=False, indent=2)
+
+        # Formato ChatML completo con tokens especiales
+        chatml_text = (
+            f"<|im_start|>system\n{system_instruction}<|im_end|>\n"
+            f"<|im_start|>user\n{json_str}<|im_end|>\n"
+            f"<|im_start|>assistant\n{output_text}<|im_end|>"
         )
 
-        prompt = f"{system_instruction}\n\nEpicrisis:\n{json.dumps(example['input'], ensure_ascii=False)}"
-        completion = example["output"]
-
-        # Formato de texto plano (prompt + completion)
-        text_example = {
-            "text": f"{prompt}\n\n{completion}<|im_end|>"
-        }
-        text_examples.append(text_example)
-
-    chatml_examples = text_examples
+        chatml_examples.append({"text": chatml_text})
 
     # Dividir en train/valid (90/10)
     import random

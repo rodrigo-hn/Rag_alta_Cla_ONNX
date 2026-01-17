@@ -132,6 +132,43 @@ function stripPromptEcho(output, prompt) {
   return trimmedOutput;
 }
 
+/**
+ * Aplica el template ChatML para modelos Qwen2.5-Instruct.
+ * @param {string} systemPrompt - Instrucción del sistema
+ * @param {string} userContent - Contenido del usuario (JSON)
+ * @returns {string} Prompt formateado con ChatML
+ */
+function applyChatTemplate(systemPrompt, userContent) {
+  return (
+    `<|im_start|>system\n${systemPrompt}<|im_end|>\n` +
+    `<|im_start|>user\n${userContent}<|im_end|>\n` +
+    `<|im_start|>assistant\n`
+  );
+}
+
+/**
+ * Extrae la respuesta del assistant del output ChatML.
+ * @param {string} output - Output completo del modelo
+ * @returns {string} Solo la respuesta del assistant
+ */
+function extractAssistantResponse(output) {
+  // Buscar el contenido después de <|im_start|>assistant
+  const assistantMarker = "<|im_start|>assistant\n";
+  const assistantIdx = output.lastIndexOf(assistantMarker);
+  if (assistantIdx !== -1) {
+    output = output.slice(assistantIdx + assistantMarker.length);
+  }
+
+  // Remover el token de fin si existe
+  const endMarker = "<|im_end|>";
+  const endIdx = output.indexOf(endMarker);
+  if (endIdx !== -1) {
+    output = output.slice(0, endIdx);
+  }
+
+  return output.trim();
+}
+
 async function getRuntime(modelBase) {
   if (runtimeCache.has(modelBase)) {
     return runtimeCache.get(modelBase);
@@ -143,6 +180,7 @@ async function getRuntime(modelBase) {
   let kvHeads = DEFAULT_KV_HEADS;
   let headSize = DEFAULT_HEAD_SIZE;
   let pastType = "float16";
+  let requiresPositionIds = false;
   try {
     const genaiConfig = await fetch(`${runtime.base}/genai_config.json`).then(
       (res) => res.json()
@@ -150,6 +188,8 @@ async function getRuntime(modelBase) {
     modelLayers = genaiConfig?.model?.decoder?.num_hidden_layers ?? modelLayers;
     kvHeads = genaiConfig?.model?.decoder?.num_key_value_heads ?? kvHeads;
     headSize = genaiConfig?.model?.decoder?.head_size ?? headSize;
+    // Check if model requires position_ids
+    requiresPositionIds = !!genaiConfig?.model?.decoder?.inputs?.position_ids;
   } catch (error) {
     modelLayers = DEFAULT_MODEL_LAYERS;
   }
@@ -163,6 +203,7 @@ async function getRuntime(modelBase) {
     kvHeads,
     headSize,
     pastType,
+    requiresPositionIds,
   };
   runtimeCache.set(modelBase ?? runtime.base, cachedRuntime);
   return cachedRuntime;
@@ -173,12 +214,14 @@ export async function generateEpicrisis(prompt, options = {}) {
     maxNewTokens = 200,
     minNewTokens = 32,
     eosTokenIds = DEFAULT_EOS_TOKEN_IDS,
-    temperature = 0.2,  // Reducido para menos alucinaciones (era 0.7)
-    topP = 0.8,         // Reducido para respuestas más determinísticas (era 0.9)
+    temperature = 0.2,  // Reducido para menos alucinaciones
+    topP = 0.8,         // Reducido para respuestas más determinísticas
     repetitionPenalty = 1.15,  // Penaliza tokens repetidos
     modelBase,
+    useChatML = false,  // Usar formato ChatML para modelos fine-tuneados
+    systemPrompt = "",  // System prompt para ChatML
   } = options;
-  const { session, tokenizer, modelLayers, kvHeads, headSize, pastType } =
+  const { session, tokenizer, modelLayers, kvHeads, headSize, pastType, requiresPositionIds } =
     await getRuntime(modelBase);
   const imEndTokenId = tokenizer.token_to_id("<|im_end|>");
   const stopTokenIds = new Set(eosTokenIds);
@@ -186,7 +229,28 @@ export async function generateEpicrisis(prompt, options = {}) {
     stopTokenIds.add(imEndTokenId);
   }
 
-  const encoded = tokenizer.encode(prompt);
+  // Aplicar ChatML si está habilitado
+  let finalPrompt = prompt;
+  if (useChatML && systemPrompt) {
+    // Extraer solo el JSON del prompt (después de "Epicrisis:")
+    let userContent = prompt;
+    const epicrisisIdx = prompt.indexOf("Epicrisis:");
+    if (epicrisisIdx !== -1) {
+      userContent = prompt.slice(epicrisisIdx + "Epicrisis:".length).trim();
+    }
+    // Formatear el JSON con indentación para que coincida con el entrenamiento
+    try {
+      const jsonObj = JSON.parse(userContent);
+      userContent = JSON.stringify(jsonObj, null, 2);
+    } catch (e) {
+      // Si no es JSON válido, usar como está
+      console.warn("ChatML: userContent is not valid JSON, using as-is");
+    }
+    finalPrompt = applyChatTemplate(systemPrompt, userContent);
+    console.log("ChatML finalPrompt:", finalPrompt.slice(0, 500));
+  }
+
+  const encoded = tokenizer.encode(finalPrompt);
   const tokenIds = [...encoded.ids];
   const promptLength = tokenIds.length;
 
@@ -205,6 +269,16 @@ export async function generateEpicrisis(prompt, options = {}) {
       ),
       ...buildEmptyPastFeeds(modelLayers, pastType, kvHeads, headSize),
     };
+
+    // Add position_ids if required by the model
+    if (requiresPositionIds) {
+      const positionIds = new Array(tokenIds.length).fill(0).map((_, i) => i);
+      feeds.position_ids = new ort.Tensor(
+        "int64",
+        BigInt64Array.from(positionIds, BigInt),
+        [1, positionIds.length]
+      );
+    }
 
     const results = await session.run(feeds);
     const logits = results.logits;
@@ -236,9 +310,19 @@ export async function generateEpicrisis(prompt, options = {}) {
   }
 
   const decoded = tokenizer.decode(tokenIds);
-  const cleaned = decoded.split("<|im_end|>")[0];
-  const withoutEcho = stripPromptEcho(cleaned, prompt);
-  const withoutTokens = stripSpecialTokens(withoutEcho);
+
+  // Procesar output según el formato usado
+  let response;
+  if (useChatML) {
+    console.log("ChatML decoded (first 800 chars):", decoded.slice(-800));
+    response = extractAssistantResponse(decoded);
+    console.log("ChatML extracted response:", response);
+  } else {
+    const cleaned = decoded.split("<|im_end|>")[0];
+    response = stripPromptEcho(cleaned, finalPrompt);
+  }
+
+  const withoutTokens = stripSpecialTokens(response);
   const withoutHtml = stripHtml(withoutTokens);
   return normalizeSingleParagraph(withoutHtml);
 }
